@@ -47,7 +47,7 @@ export default async function Page({
             {/*   <LLMCopyButton markdownUrl={`${page.url}.mdx`} /> */}
             {/* )} */}
             <ViewOptions
-              pageUrl={page.url}
+              markdownUrl={`${page.url}.mdx`}
               githubUrl={`https://github.com/prisma/docs/blob/main/apps/docs/content/docs/${page.path}`}
             />
           </div>

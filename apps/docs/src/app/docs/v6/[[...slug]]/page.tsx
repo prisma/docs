@@ -51,7 +51,7 @@ export default async function Page({
         <div className="flex flex-row gap-2 items-center">
           {/* <LLMCopyButton markdownUrl={`${page.url}.mdx`} /> */}
           <ViewOptions
-            pageUrl={page.url}
+            markdownUrl={`${page.url}.mdx`}
             githubUrl={`https://github.com/prisma/docs/blob/main/content/docs/${page.path}`}
           />
         </div>
