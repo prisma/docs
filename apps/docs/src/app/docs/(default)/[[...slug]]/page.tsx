@@ -1,9 +1,11 @@
-import { getPageImage, source } from '@/lib/source';
-import { notFound } from 'next/navigation';
-import { getMDXComponents } from '@/mdx-components';
-import type { Metadata } from 'next';
-import { createRelativeLink } from 'fumadocs-ui/mdx';
-import { LLMCopyButton, ViewOptions } from '@/components/page-actions';
+import { getPageImage, source } from "@/lib/source";
+import { notFound } from "next/navigation";
+import { getMDXComponents } from "@/mdx-components";
+import type { Metadata } from "next";
+import { createRelativeLink } from "fumadocs-ui/mdx";
+import { LLMCopyButton, ViewOptions } from "@/components/page-actions";
+import { getPromptContent } from "@/lib/get-prompt-content";
+import { AIPromptBanner } from "@/components/ai-prompt-banner";
 import {
   DocsBody,
   DocsDescription,
@@ -11,23 +13,22 @@ import {
   DocsTitle,
   EditOnGitHub,
   PageLastUpdate,
-} from '@/components/layout/notebook/page';
-import { TechArticleSchema, BreadcrumbSchema } from '@/components/structured-data';
+} from "@/components/layout/notebook/page";
+import { TechArticleSchema, BreadcrumbSchema } from "@/components/structured-data";
 
 interface PageParams {
   slug?: string[];
 }
 
-export default async function Page({
-  params,
-}: {
-  params: Promise<PageParams>;
-}) {
+export default async function Page({ params }: { params: Promise<PageParams> }) {
   const { slug } = await params;
   const page = source.getPage(slug);
   if (!page) notFound();
 
   const MDX = page.data.body;
+
+  const aiPromptSlug = (page.data as { aiPrompt?: string }).aiPrompt;
+  const promptContent = aiPromptSlug ? await getPromptContent(aiPromptSlug) : null;
 
   return (
     <>
@@ -35,7 +36,7 @@ export default async function Page({
       <BreadcrumbSchema page={page} />
       <DocsPage
         tableOfContent={{
-          style: 'normal',
+          style: "normal",
         }}
         toc={page.data.toc}
         full={page.data.full}
@@ -43,7 +44,7 @@ export default async function Page({
         <div className="flex flex-col md:flex-row items-start gap-4 pt-2 pb-1 md:justify-between">
           <DocsTitle>{page.data.title}</DocsTitle>
           <div className="flex flex-row gap-2 items-center">
-            {!page.url.startsWith('/management-api/endpoints') && (
+            {!page.url.startsWith("/management-api/endpoints") && (
               <LLMCopyButton pageUrl={page.url} />
             )}
             <ViewOptions
@@ -52,25 +53,26 @@ export default async function Page({
             />
           </div>
         </div>
-      <DocsDescription>{page.data.description}</DocsDescription>
-      <DocsBody>
-        <MDX
-          components={getMDXComponents({
-            a: createRelativeLink(source, page),
-          })}
-        />
-      </DocsBody>
-      <div className="flex flex-row flex-wrap items-center justify-between gap-4 border-t pt-6 text-sm">
-        <EditOnGitHub
-          href={`https://github.com/prisma/docs/edit/main/apps/docs/content/docs/${page.path}`}
-        />
-        {(page.data as { lastModified?: Date }).lastModified && (
-          <PageLastUpdate
-            date={(page.data as { lastModified: Date }).lastModified}
-          />
+        <DocsDescription>{page.data.description}</DocsDescription>
+        {promptContent && (
+          <AIPromptBanner fullPrompt={promptContent.fullPrompt} guideName={page.data.title} />
         )}
-      </div>
-    </DocsPage>
+        <DocsBody>
+          <MDX
+            components={getMDXComponents({
+              a: createRelativeLink(source, page),
+            })}
+          />
+        </DocsBody>
+        <div className="flex flex-row flex-wrap items-center justify-between gap-4 border-t pt-6 text-sm">
+          <EditOnGitHub
+            href={`https://github.com/prisma/docs/edit/main/apps/docs/content/docs/${page.path}`}
+          />
+          {(page.data as { lastModified?: Date }).lastModified && (
+            <PageLastUpdate date={(page.data as { lastModified: Date }).lastModified} />
+          )}
+        </div>
+      </DocsPage>
     </>
   );
 }
@@ -104,7 +106,7 @@ export async function generateMetadata({
       images: page.data.image || getPageImage(page).url,
     },
     twitter: {
-      card: 'summary_large_image',
+      card: "summary_large_image",
       title,
       description,
     },
