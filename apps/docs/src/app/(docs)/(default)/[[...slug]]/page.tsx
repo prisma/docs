@@ -1,9 +1,10 @@
-import { getPageImage, source } from '@/lib/source';
-import { notFound } from 'next/navigation';
-import { getMDXComponents } from '@/mdx-components';
-import type { Metadata } from 'next';
-import { createRelativeLink } from 'fumadocs-ui/mdx';
-import { LLMCopyButton, ViewOptions } from '@/components/page-actions';
+import { getPageImage, source } from "@/lib/source";
+import { withDocsBasePath } from "@/lib/urls";
+import { notFound } from "next/navigation";
+import { getMDXComponents } from "@/mdx-components";
+import type { Metadata } from "next";
+import { createRelativeLink } from "fumadocs-ui/mdx";
+import { LLMCopyButton, ViewOptions } from "@/components/page-actions";
 import {
   DocsBody,
   DocsDescription,
@@ -11,8 +12,11 @@ import {
   DocsTitle,
   EditOnGitHub,
   PageLastUpdate,
-} from '@/components/layout/notebook/page';
-import { TechArticleSchema, BreadcrumbSchema } from '@/components/structured-data';
+} from "@/components/layout/notebook/page";
+import {
+  TechArticleSchema,
+  BreadcrumbSchema,
+} from "@/components/structured-data";
 
 interface PageParams {
   slug?: string[];
@@ -35,7 +39,7 @@ export default async function Page({
       <BreadcrumbSchema page={page} />
       <DocsPage
         tableOfContent={{
-          style: 'normal',
+          style: "normal",
         }}
         toc={page.data.toc}
         full={page.data.full}
@@ -43,32 +47,35 @@ export default async function Page({
         <div className="flex flex-col md:flex-row items-start gap-4 pt-2 pb-1 md:justify-between">
           <DocsTitle>{page.data.title}</DocsTitle>
           <div className="flex flex-row gap-2 items-center">
-            <LLMCopyButton markdownUrl={`${page.url}.mdx`} />
+            {!page.url.startsWith("/management-api/endpoints") && (
+              <LLMCopyButton markdownUrl={`${withDocsBasePath(page.url)}.mdx`} />
+            )}
+
             <ViewOptions
               markdownUrl={`${page.url}.mdx`}
               githubUrl={`https://github.com/prisma/docs/blob/main/apps/docs/content/docs/${page.path}`}
             />
           </div>
         </div>
-      <DocsDescription>{page.data.description}</DocsDescription>
-      <DocsBody>
-        <MDX
-          components={getMDXComponents({
-            a: createRelativeLink(source, page),
-          })}
-        />
-      </DocsBody>
-      <div className="flex flex-row flex-wrap items-center justify-between gap-4 border-t pt-6 text-sm">
-        <EditOnGitHub
-          href={`https://github.com/prisma/docs/edit/main/apps/docs/content/docs/${page.path}`}
-        />
-        {(page.data as { lastModified?: Date }).lastModified && (
-          <PageLastUpdate
-            date={(page.data as { lastModified: Date }).lastModified}
+        <DocsDescription>{page.data.description}</DocsDescription>
+        <DocsBody>
+          <MDX
+            components={getMDXComponents({
+              a: createRelativeLink(source, page),
+            })}
           />
-        )}
-      </div>
-    </DocsPage>
+        </DocsBody>
+        <div className="flex flex-row flex-wrap items-center justify-between gap-4 border-t pt-6 text-sm">
+          <EditOnGitHub
+            href={`https://github.com/prisma/docs/edit/main/apps/docs/content/docs/${page.path}`}
+          />
+          {(page.data as { lastModified?: Date }).lastModified && (
+            <PageLastUpdate
+              date={(page.data as { lastModified: Date }).lastModified}
+            />
+          )}
+        </div>
+      </DocsPage>
     </>
   );
 }
@@ -93,16 +100,16 @@ export async function generateMetadata({
     title,
     description,
     alternates: {
-      canonical: page.url,
+      canonical: withDocsBasePath(page.url),
     },
     openGraph: {
       title,
       description,
-      url: page.url,
-      images: page.data.image || getPageImage(page).url,
+      url: withDocsBasePath(page.url),
+      images: page.data.image || withDocsBasePath(getPageImage(page).url),
     },
     twitter: {
-      card: 'summary_large_image',
+      card: "summary_large_image",
       title,
       description,
     },
