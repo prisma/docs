@@ -11,8 +11,8 @@ import {
   SearchDialogOverlay,
   type SharedProps,
 } from 'fumadocs-ui/components/dialog/search';
-import { SearchIcon, X } from 'lucide-react';
-import { ComponentProps, useEffect, useRef } from 'react';
+import { SearchIcon, SearchX, X } from 'lucide-react';
+import { type ComponentProps, useCallback, useEffect, useRef } from 'react';
 import posthog from 'posthog-js';
 
 export function CustomSearchDialogIcon(
@@ -38,7 +38,9 @@ export default function CustomSearchDialog(props: SharedProps) {
 
   const lastCapturedQueryRef = useRef<string | null>(null);
   const stabilityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  
+  const clickedResultRef = useRef(false);
+  const lastNoResultQueryRef = useRef<string | null>(null);
+
   useEffect(() => {
     if (
       search.length > 0 &&
@@ -62,12 +64,42 @@ export default function CustomSearchDialog(props: SharedProps) {
     };
   }, [query.data, query.isLoading, search]);
 
+  const resultsArray = query.data !== 'empty' && query.data !== undefined ? query.data : null;
+  const hasResults = Array.isArray(resultsArray) && resultsArray.length > 0;
+  const showNoResults = !query.isLoading && search.length > 0 && !hasResults;
+
+  useEffect(() => {
+    if (showNoResults && lastNoResultQueryRef.current !== search) {
+      lastNoResultQueryRef.current = search;
+      posthog.capture('docs:search_no_results', { query: search });
+    }
+  }, [showNoResults, search]);
+
+  const handleOpenChange = useCallback(
+    (open: boolean) => {
+      if (!open && search.length > 0 && !clickedResultRef.current) {
+        const resultCount = Array.isArray(resultsArray) ? resultsArray.length : 0;
+        posthog.capture('docs:search_no_click', {
+          query: search,
+          result_count: resultCount,
+        });
+      }
+      if (!open) {
+        clickedResultRef.current = false;
+        lastNoResultQueryRef.current = null;
+      }
+      props.onOpenChange?.(open);
+    },
+    [search, resultsArray, props],
+  );
+
   return (
     <SearchDialog
       search={search}
       onSearchChange={setSearch}
       isLoading={query.isLoading}
       {...props}
+      onOpenChange={handleOpenChange}
     >
       <SearchDialogOverlay suppressHydrationWarning />
       <SearchDialogContent>
@@ -78,7 +110,21 @@ export default function CustomSearchDialog(props: SharedProps) {
             <X className="size-4" aria-hidden="true" />
           </SearchDialogClose>
         </SearchDialogHeader>
-        <SearchDialogList items={query.data !== 'empty' ? query.data : null} />
+        {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
+        <div onClick={() => { clickedResultRef.current = true; }}>
+          <SearchDialogList items={resultsArray} />
+        </div>
+        {showNoResults && (
+          <div className="flex flex-col items-center gap-2 px-6 py-8 text-center">
+            <SearchX className="size-10 text-fd-muted-foreground/50" />
+            <p className="text-sm font-medium text-fd-muted-foreground">
+              No results for &ldquo;{search}&rdquo;
+            </p>
+            <p className="text-xs text-fd-muted-foreground/70">
+              Try different keywords or check for typos
+            </p>
+          </div>
+        )}
       </SearchDialogContent>
     </SearchDialog>
   );
