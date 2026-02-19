@@ -13,6 +13,7 @@ import {
   PageLastUpdate,
 } from '@/components/layout/notebook/page';
 import { TechArticleSchema, BreadcrumbSchema } from '@/components/structured-data';
+import { PageFeedback } from '@/components/page-feedback';
 
 interface PageParams {
   slug?: string[];
@@ -68,6 +69,7 @@ export default async function Page({
           />
         )}
       </div>
+      <PageFeedback />
     </DocsPage>
     </>
   );

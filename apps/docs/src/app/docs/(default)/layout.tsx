@@ -4,6 +4,7 @@ import { VersionSwitcher } from '@/components/version-switcher';
 import type { LinkItemType } from 'fumadocs-ui/layouts/shared';
 import { DocsLayout } from '@/components/layout/notebook';
 import { LATEST_VERSION } from '@/lib/version';
+import { FloatingAsk } from '@/components/floating-ask';
 
 export default async function Layout({
   children,
@@ -21,14 +22,17 @@ export default async function Layout({
   ];
 
   return (
-    <DocsLayout
-      {...base}
-      links={navbarLinks}
-      nav={{ ...nav }}
-      sidebar={{ collapsible: false }}
-      tree={source.pageTree}
-    >
-      {children}
-    </DocsLayout>
+    <>
+      <DocsLayout
+        {...base}
+        links={navbarLinks}
+        nav={{ ...nav }}
+        sidebar={{ collapsible: false }}
+        tree={source.pageTree}
+      >
+        {children}
+      </DocsLayout>
+      <FloatingAsk />
+    </>
   );
 }
