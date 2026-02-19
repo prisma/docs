@@ -27,10 +27,13 @@ import {
   TableCell,
   TableCaption,
   Input,
+  Alert,
 } from "@prisma-docs/eclipse";
 
 export function getMDXComponents(components?: MDXComponents): MDXComponents {
-  const mdxComponents = {
+  const pageContext = (components as any)?._pageContext;
+
+  return {
     ...(icons as unknown as MDXComponents),
     ...defaultMdxComponents,
     // Fumadocs tabs for manual usage (with items prop)
@@ -50,11 +53,6 @@ export function getMDXComponents(components?: MDXComponents): MDXComponents {
     APIPage,
     img: (props: any) => <ImageZoom {...(props as any)} />,
     input: (props: any) => <Input {...props} />,
-  };
-
-  const pageContext = (components as any)?._pageContext;
-
-  return {
     ...mdxComponents,
     pre: ({ ref: _ref, ...props }) => (
       <CodeBlock {...props}>
@@ -69,5 +67,29 @@ export function getMDXComponents(components?: MDXComponents): MDXComponents {
     th: ({ ref: _ref, ...props }) => <TableHead {...props} />,
     td: ({ ref: _ref, ...props }) => <TableCell {...props} />,
     caption: ({ ref: _ref, ...props }) => <TableCaption {...props} />,
+    // Override Fumadocs Callout components with Eclipse Alert for admonitions (:::ppg, :::error, :::success, :::warning)
+    CalloutTitle: ({ children }: any) => <>{children}</>,
+    CalloutDescription: ({ children }: any) => <>{children}</>,
+    CalloutContainer: ({ type, children, icon, ...props }: any) => {
+      const variantMap: Record<
+        string,
+        "ppg" | "error" | "success" | "warning"
+      > = {
+        ppg: "ppg",
+        error: "error",
+        success: "success",
+        warning: "warning",
+        info: "ppg",
+        note: "ppg",
+        tip: "success",
+        danger: "error",
+      };
+
+      return (
+        <Alert variant={variantMap[type] || "ppg"} icon={icon} {...props}>
+          {children}
+        </Alert>
+      );
+    },
   };
 }

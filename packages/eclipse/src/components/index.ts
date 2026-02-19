@@ -137,3 +137,5 @@ export {
   PaginationEllipsis,
   PaginationInput,
 } from "./pagination";
+
+export { Alert } from "./alert";
