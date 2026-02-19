@@ -44,6 +44,7 @@ import {
   type SidebarTabWithProps,
 } from '../sidebar/tabs/dropdown';
 import { AIChatSidebar } from '@/components/ai-chat-sidebar';
+import { StatusIndicator } from '@/components/status-indicator';
 
 export interface DocsLayoutProps extends BaseLayoutProps {
   tree: PageTree.Root;
@@ -310,6 +311,9 @@ function DocsNavbar({
             />
           ))}
         <div className="flex flex-1 items-center justify-end gap-2">
+          <div className="max-md:hidden">
+            <StatusIndicator />
+          </div>
           <AIChatSidebar />
           <div className="flex items-center gap-2 max-md:hidden">
             {links
