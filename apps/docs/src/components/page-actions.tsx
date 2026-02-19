@@ -104,13 +104,13 @@ const optionVariants = cva(
 );
 
 export function ViewOptions({
-  pageUrl,
+  markdownUrl,
   githubUrl,
 }: {
   /**
-   * The page URL path (e.g., /guides/getting-started)
+   * A URL to the raw Markdown/MDX content of page
    */
-  pageUrl: string;
+  markdownUrl: string;
 
   /**
    * Source file URL on GitHub
@@ -118,7 +118,6 @@ export function ViewOptions({
   githubUrl: string;
 }) {
   const items = useMemo(() => {
-    const markdownUrl = `/mdx${pageUrl}`;
     const fullMarkdownUrl =
       typeof window !== 'undefined'
         ? new URL(markdownUrl, window.location.origin)
@@ -179,7 +178,7 @@ export function ViewOptions({
         icon: <MessageCircleIcon />,
       },
     ];
-  }, [githubUrl, pageUrl]);
+  }, [githubUrl, markdownUrl]);
 
   return (
     <Popover>
