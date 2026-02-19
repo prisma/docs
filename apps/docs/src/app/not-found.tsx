@@ -51,7 +51,7 @@ export default function NotFound() {
             <p className="text-2xl font-semibold text-white">
               We could not find the page you were looking for
             </p>
-            <a href="/" className="hover:underline transition-colors">
+            <a href="/docs" className="hover:underline transition-colors">
               Go to docs
             </a>
           </div>

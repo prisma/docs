@@ -15,6 +15,19 @@ export function normalize(urlOrPath: string) {
   return urlOrPath;
 }
 
+const DOCS_PREFIX = '/docs';
+
+/**
+ * Strips the /docs prefix for segment-based comparison.
+ * All docs paths share this prefix, so we compare the segments to avoid
+ * /docs/orm incorrectly matching /docs/prisma-orm.
+ */
+function withoutDocsPrefix(path: string): string {
+  if (path === DOCS_PREFIX || path === `${DOCS_PREFIX}/`) return '';
+  if (path.startsWith(`${DOCS_PREFIX}/`)) return path.slice(DOCS_PREFIX.length);
+  return path;
+}
+
 /**
  * @returns if `href` is matching the given pathname
  */
@@ -22,7 +35,18 @@ export function isActive(href: string, pathname: string, nested = true): boolean
   href = normalize(href);
   pathname = normalize(pathname);
 
-  return href === pathname || (nested && pathname.startsWith(`${href}/`));
+  const hrefSegment = withoutDocsPrefix(href);
+  const pathSegment = withoutDocsPrefix(pathname);
+
+  if (hrefSegment === pathSegment) return true;
+  // Root /docs must only match /docs exactly, not nested paths like /docs/orm
+  if (hrefSegment === '') return false;
+  return (
+    nested &&
+    pathSegment.startsWith(`${hrefSegment}/`) &&
+    // Ensure segment boundary: "orm" must not match "prisma-orm"
+    (pathSegment.length === hrefSegment.length || pathSegment[hrefSegment.length] === '/')
+  );
 }
 
 /**
@@ -30,8 +54,16 @@ export function isActive(href: string, pathname: string, nested = true): boolean
  */
 export function isActiveAny(paths: string[], pathname: string): boolean {
   const normalizedPathname = normalize(pathname);
+  const pathSegment = withoutDocsPrefix(normalizedPathname);
   return paths.some((path) => {
     const normalized = normalize(path);
-    return normalized === normalizedPathname || normalizedPathname.startsWith(`${normalized}/`);
+    const segment = withoutDocsPrefix(normalized);
+    if (segment === pathSegment) return true;
+    // Root /docs only matches /docs exactly
+    if (segment === '') return false;
+    return (
+      pathSegment.startsWith(`${segment}/`) &&
+      (pathSegment.length === segment.length || pathSegment[segment.length] === '/')
+    );
   });
 }
