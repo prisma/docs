@@ -1,27 +1,27 @@
-import remarkDirective from 'remark-directive';
+import remarkDirective from "remark-directive";
 import {
   remarkDirectiveAdmonition,
   remarkMdxFiles,
-} from 'fumadocs-core/mdx-plugins';
-import { remarkImage } from 'fumadocs-core/mdx-plugins';
+} from "fumadocs-core/mdx-plugins";
+import { remarkImage } from "fumadocs-core/mdx-plugins";
 import {
   defineConfig,
   defineDocs,
   frontmatterSchema,
   metaSchema,
-} from 'fumadocs-mdx/config';
-import lastModified from 'fumadocs-mdx/plugins/last-modified';
-import { z } from 'zod';
-import convert from 'npm-to-yarn';
+} from "fumadocs-mdx/config";
+import lastModified from "fumadocs-mdx/plugins/last-modified";
+import { z } from "zod";
+import convert from "npm-to-yarn";
 
 // You can customise Zod schemas for frontmatter and `meta.json` here
 // see https://fumadocs.dev/docs/mdx/collections
 export const docs = defineDocs({
-  dir: 'content/docs',
+  dir: "content/docs",
   docs: {
     schema: frontmatterSchema.extend({
       image: z.string().optional(),
-      badge: z.enum(['early-access', 'deprecated', 'preview']).optional(),
+      badge: z.enum(["early-access", "deprecated", "preview"]).optional(),
       url: z.string(),
       metaTitle: z.string(),
       metaDescription: z.string(),
@@ -37,11 +37,11 @@ export const docs = defineDocs({
 
 // v6 docs collection
 export const docsV6 = defineDocs({
-  dir: 'content/docs.v6',
+  dir: "content/docs.v6",
   docs: {
     schema: frontmatterSchema.extend({
       image: z.string().optional(),
-      badge: z.enum(['early-access', 'deprecated', 'preview']).optional(),
+      badge: z.enum(["early-access", "deprecated", "preview"]).optional(),
       url: z.string(),
       metaTitle: z.string().optional(),
       metaDescription: z.string().optional(),
@@ -60,7 +60,22 @@ export default defineConfig({
   mdxOptions: {
     remarkPlugins: [
       remarkDirective,
-      remarkDirectiveAdmonition,
+      [
+        remarkDirectiveAdmonition,
+        {
+          types: {
+            note: "info",
+            tip: "info",
+            info: "info",
+            warn: "warning",
+            warning: "warning",
+            danger: "error",
+            success: "success",
+            ppg: "ppg",
+            error: "error",
+          },
+        },
+      ],
       [remarkImage, { useImport: false }],
       remarkMdxFiles,
     ],
@@ -69,19 +84,19 @@ export default defineConfig({
     },
     remarkNpmOptions: {
       persist: {
-        id: 'package-manager',
+        id: "package-manager",
       },
       packageManagers: [
-        { command: (cmd: string) => convert(cmd, 'npm'), name: 'npm' },
-        { command: (cmd: string) => convert(cmd, 'pnpm'), name: 'pnpm' },
-        { command: (cmd: string) => convert(cmd, 'yarn'), name: 'yarn' },
+        { command: (cmd: string) => convert(cmd, "npm"), name: "npm" },
+        { command: (cmd: string) => convert(cmd, "pnpm"), name: "pnpm" },
+        { command: (cmd: string) => convert(cmd, "yarn"), name: "yarn" },
         {
           command: (cmd: string) => {
-            const converted = convert(cmd, 'bun');
+            const converted = convert(cmd, "bun");
             if (!converted) return undefined;
-            return converted.replace(/^bun x /, 'bunx --bun ');
+            return converted.replace(/^bun x /, "bunx --bun ");
           },
-          name: 'bun',
+          name: "bun",
         },
       ],
     },
