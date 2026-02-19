@@ -6,14 +6,14 @@ import { type Version } from "./version";
 
 // See https://fumadocs.dev/docs/headless/source-api for more info
 export const source = loader({
-  baseUrl: "/",
+  baseUrl: "/docs",
   source: docs.toFumadocsSource(),
   plugins: [lucideIconsPlugin(), openapiPlugin()],
 });
 
 // v6 source - URLs with /v6/ prefix
 export const sourceV6 = loader({
-  baseUrl: "/v6",
+  baseUrl: "/docs/v6",
   source: docsV6.toFumadocsSource(),
   plugins: [lucideIconsPlugin()],
 });

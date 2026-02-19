@@ -99,7 +99,7 @@ export default function GlobalError({
           Error
         </h1>
         <p className="subtitle">Something went wrong</p>
-        <a href="/">Go to docs</a>
+        <a href="/docs">Go to docs</a>
       </body>
     </html>
   );

@@ -16,41 +16,41 @@ export default async function Layout({
   const v6Links: LinkItemType[] = [
     {
       text: 'Getting Started',
-      url: '/v6',
+      url: '/docs/v6',
     },
     {
       text: 'ORM',
-      url: '/v6/orm',
+      url: '/docs/v6/orm',
       active: 'nested-url',
     },
     {
       text: 'Postgres',
-      url: '/v6/postgres',
+      url: '/docs/v6/postgres',
       active: 'nested-url',
     },
     {
       text: 'Accelerate',
-      url: '/v6/accelerate',
+      url: '/docs/v6/accelerate',
       active: 'nested-url',
     },
     {
       text: 'Optimize',
-      url: '/v6/optimize',
+      url: '/docs/v6/optimize',
       active: 'nested-url',
     },
     {
       text: 'Guides',
-      url: '/v6/guides',
+      url: '/docs/v6/guides',
       active: 'nested-url',
     },
     {
       text: 'Platform',
-      url: '/v6/platform',
+      url: '/docs/v6/platform',
       active: 'nested-url',
     },
     {
       text: 'AI',
-      url: '/v6/ai',
+      url: '/docs/v6/ai',
       active: 'nested-url',
     },
     {

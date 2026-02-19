@@ -19,19 +19,48 @@ import { cva } from 'class-variance-authority';
 
 const cache = new Map<string, string>();
 
+function toIndexMarkdownUrl(markdownUrl: string): string | null {
+  if (!markdownUrl.endsWith('.mdx')) return `${markdownUrl.replace(/\/$/, '')}/index.mdx`;
+
+  const withoutExtension = markdownUrl.slice(0, -'.mdx'.length);
+  if (withoutExtension.endsWith('/index')) return null;
+
+  return `${withoutExtension}/index.mdx`;
+}
+
+async function fetchMarkdownWithFallback(markdownUrl: string): Promise<{ content: string; resolvedUrl: string }> {
+  const res = await fetch(markdownUrl);
+  if (res.ok) {
+    return { content: await res.text(), resolvedUrl: markdownUrl };
+  }
+
+  const fallbackUrl = toIndexMarkdownUrl(markdownUrl);
+  if (!fallbackUrl) {
+    throw new Error(`Failed to fetch markdown from ${markdownUrl} (${res.status})`);
+  }
+
+  const fallbackRes = await fetch(fallbackUrl);
+  if (fallbackRes.ok) {
+    return { content: await fallbackRes.text(), resolvedUrl: fallbackUrl };
+  }
+
+  throw new Error(
+    `Failed to fetch markdown from ${markdownUrl} (${res.status}) and ${fallbackUrl} (${fallbackRes.status})`,
+  );
+}
+
 export function LLMCopyButton({
   /**
-   * The page URL path (e.g., /guides/getting-started)
+   * A URL to fetch the raw Markdown/MDX content of page
    */
-  pageUrl,
+  markdownUrl,
 }: {
-  pageUrl: string;
+  markdownUrl: string;
 }) {
   const [isLoading, setLoading] = useState(false);
-  const markdownUrl = `/mdx${pageUrl}`;
-
   const [checked, onClick] = useCopyButton(async () => {
-    const cached = cache.get(markdownUrl);
+    const fallbackUrl = toIndexMarkdownUrl(markdownUrl);
+    const cached = cache.get(markdownUrl) ?? (fallbackUrl ? cache.get(fallbackUrl) : undefined);
     if (cached) return navigator.clipboard.writeText(cached);
 
     setLoading(true);
@@ -39,11 +68,11 @@ export function LLMCopyButton({
     try {
       await navigator.clipboard.write([
         new ClipboardItem({
-          'text/plain': fetch(markdownUrl).then(async (res) => {
-            const content = await res.text();
+          'text/plain': fetchMarkdownWithFallback(markdownUrl).then(({ content, resolvedUrl }) => {
             cache.set(markdownUrl, content);
+            cache.set(resolvedUrl, content);
 
-            return content;
+            return new Blob([content], { type: 'text/plain' });
           }),
         }),
       ]);
@@ -75,13 +104,13 @@ const optionVariants = cva(
 );
 
 export function ViewOptions({
-  pageUrl,
+  markdownUrl,
   githubUrl,
 }: {
   /**
-   * The page URL path (e.g., /guides/getting-started)
+   * A URL to the raw Markdown/MDX content of page
    */
-  pageUrl: string;
+  markdownUrl: string;
 
   /**
    * Source file URL on GitHub
@@ -89,7 +118,6 @@ export function ViewOptions({
   githubUrl: string;
 }) {
   const items = useMemo(() => {
-    const markdownUrl = `/mdx${pageUrl}`;
     const fullMarkdownUrl =
       typeof window !== 'undefined'
         ? new URL(markdownUrl, window.location.origin)
@@ -150,7 +178,7 @@ export function ViewOptions({
         icon: <MessageCircleIcon />,
       },
     ];
-  }, [githubUrl, pageUrl]);
+  }, [githubUrl, markdownUrl]);
 
   return (
     <Popover>
