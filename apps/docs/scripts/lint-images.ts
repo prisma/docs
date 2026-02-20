@@ -50,8 +50,11 @@ function findMdxFiles(dir: string, fileList: string[] = []): string[] {
 }
 
 function stripCodeBlocks(content: string): string {
-  // Avoid false positives from examples in fenced code blocks.
-  return content.replace(/```[\s\S]*?```/g, "");
+  // Replace fenced code blocks with an equal number of blank lines so
+  // that match.index values stay aligned with the original file's line numbers.
+  return content.replace(/```[\s\S]*?```/g, (match) =>
+    "\n".repeat((match.match(/\n/g) ?? []).length),
+  );
 }
 
 function extractMarkdownUrl(raw: string): string {
