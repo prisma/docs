@@ -13,6 +13,15 @@ import lastModified from 'fumadocs-mdx/plugins/last-modified';
 import { z } from 'zod';
 import convert from 'npm-to-yarn';
 
+const blogPostTypes = [
+  'release',
+  'user-story',
+  'tutorial',
+  'community',
+  'postgres',
+  'changelog',
+] as const;
+
 export const blogPosts = defineCollections({
   type: 'doc',
   dir: 'content/blog',
@@ -21,6 +30,9 @@ export const blogPosts = defineCollections({
     date: z.coerce.date(),
     heroImagePath: z.string().optional(),
     metaImagePath: z.string().optional(),
+    type: z.enum(blogPostTypes).optional(),
+    tags: z.array(z.string()).optional(),
+    featured: z.boolean().optional(),
   }),
   postprocess: {
     includeProcessedMarkdown: true,

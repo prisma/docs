@@ -17,11 +17,11 @@ export default function Layout({ children }: LayoutProps<'/'>) {
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${barlow.variable}`}
+      className={`${inter.variable} ${barlow.variable} dark`}
       suppressHydrationWarning
     >
       <head></head>
-      <body className="flex flex-col min-h-screen">
+      <body className="flex min-h-screen flex-col bg-background text-foreground">
         <RootProvider>{children}</RootProvider>
       </body>
     </html>

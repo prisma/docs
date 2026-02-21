@@ -3,7 +3,7 @@ import { VersionSwitcher } from "@/components/version-switcher";
 import type { LinkItemType } from "fumadocs-ui/layouts/shared";
 import { DocsLayout } from "@/components/layout/notebook";
 import { sourceV6 } from "@/lib/source";
-import { DiscordIcon } from "@/components/icons/discord";
+import { DiscordIcon } from "@prisma-docs/ui/components/discord";
 
 export default async function Layout({
   children,
@@ -82,4 +82,3 @@ export default async function Layout({
     </DocsLayout>
   );
 }
-
