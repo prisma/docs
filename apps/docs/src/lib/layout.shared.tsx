@@ -2,7 +2,7 @@ import type { BaseLayoutProps, LinkItemType } from 'fumadocs-ui/layouts/shared';
 import Image from 'next/image';
 import logoDark from '../../public/img/logo-dark.svg';
 import logoWhite from '../../public/img/logo-white.svg';
-import { DiscordIcon } from '@/components/icons/discord';
+import { DiscordIcon } from '@prisma-docs/ui/components/discord';
 import Link from 'next/link';
 
 export const logo = (

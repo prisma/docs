@@ -86,7 +86,7 @@ const SourcesDisplay = ({
             href={source.source_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-2 py-1 text-xs rounded-md bg-fd-muted hover:bg-fd-accent transition-colors max-w-[200px] group"
+            className="flex items-center gap-1.5 px-2 py-1 text-xs rounded-md bg-fd-muted hover:bg-fd-accent transition-colors max-w-50 group"
           >
             <FileTextIcon className="size-3 shrink-0 text-fd-muted-foreground" />
             <span className="truncate">{source.title || source.subtitle}</span>
@@ -132,13 +132,13 @@ const FeedbackButtons = ({
                 "h-7 w-7",
                 currentReaction === "upvote" &&
                   "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950",
-                disabled && "opacity-50 cursor-not-allowed"
+                disabled && "opacity-50 cursor-not-allowed",
               )}
             >
               <ThumbsUpIcon
                 className={cn(
                   "size-3.5",
-                  currentReaction === "upvote" && "fill-current"
+                  currentReaction === "upvote" && "fill-current",
                 )}
               />
             </button>
@@ -159,13 +159,13 @@ const FeedbackButtons = ({
                 "h-7 w-7",
                 currentReaction === "downvote" &&
                   "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950",
-                disabled && "opacity-50 cursor-not-allowed"
+                disabled && "opacity-50 cursor-not-allowed",
               )}
             >
               <ThumbsDownIcon
                 className={cn(
                   "size-3.5",
-                  currentReaction === "downvote" && "fill-current"
+                  currentReaction === "downvote" && "fill-current",
                 )}
               />
             </button>
@@ -296,7 +296,7 @@ const ChatInner = ({
                   }
                   className={cn(
                     buttonVariants({ variant: "ghost", size: "icon-sm" }),
-                    "disabled:opacity-50"
+                    "disabled:opacity-50",
                   )}
                 >
                   <Trash2 className="size-3.5" />
@@ -312,7 +312,7 @@ const ChatInner = ({
                   {...props}
                   onClick={onClose}
                   className={cn(
-                    buttonVariants({ variant: "ghost", size: "icon-sm" })
+                    buttonVariants({ variant: "ghost", size: "icon-sm" }),
                   )}
                 >
                   <ChevronRightIcon className="size-3.5" />
@@ -429,7 +429,9 @@ const ChatInner = ({
                     <div className="flex items-start gap-2 text-red-600 dark:text-red-400">
                       <AlertCircleIcon className="size-4 mt-0.5 shrink-0" />
                       <div className="flex flex-col gap-1">
-                        <span className="font-medium">Something went wrong</span>
+                        <span className="font-medium">
+                          Something went wrong
+                        </span>
                         <span className="text-xs opacity-80">{error}</span>
                       </div>
                     </div>
@@ -523,14 +525,18 @@ export const AIChatSidebar = ({
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
           buttonVariants({ variant: "outline" }),
-          "hidden shrink-0 shadow-none md:inline-flex items-center gap-2 h-8 group cursor-pointer"
+          "hidden shrink-0 shadow-none md:inline-flex items-center gap-2 h-8 group cursor-pointer",
         )}
       >
         <MessagesSquareIcon className="size-4 text-fd-muted-foreground group-hover:text-fd-accent-foreground" />
         <span>Ask AI</span>
         <div className="ms-auto inline-flex gap-0.5">
-          <kbd className="rounded-md border bg-fd-background px-1.5 text-fd-muted-foreground group-hover:text-fd-accent-foreground">{isMac ? "⌘" : "Ctrl"}</kbd>
-          <kbd className="rounded-md border bg-fd-background px-1.5 text-fd-muted-foreground group-hover:text-fd-accent-foreground">I</kbd>
+          <kbd className="rounded-md border bg-fd-background px-1.5 text-fd-muted-foreground group-hover:text-fd-accent-foreground">
+            {isMac ? "⌘" : "Ctrl"}
+          </kbd>
+          <kbd className="rounded-md border bg-fd-background px-1.5 text-fd-muted-foreground group-hover:text-fd-accent-foreground">
+            I
+          </kbd>
         </div>
       </button>
 
@@ -542,7 +548,7 @@ export const AIChatSidebar = ({
               "inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-[500px]",
               "translate-x-full data-[state=open]:translate-x-0",
               "pointer-events-none data-[state=open]:pointer-events-auto",
-              "hidden md:flex"
+              "hidden md:flex",
             )}
             data-state={isOpen ? "open" : "closed"}
           >
@@ -551,7 +557,7 @@ export const AIChatSidebar = ({
               onClose={() => setIsOpen(false)}
             />
           </div>,
-          document.body
+          document.body,
         )}
 
       <div className="md:hidden">
@@ -563,7 +569,7 @@ export const AIChatSidebar = ({
             <button
               className={cn(
                 buttonVariants({ variant: "outline", size: "sm" }),
-                "shadow-none inline-flex items-center gap-1.5"
+                "shadow-none inline-flex items-center gap-1.5",
               )}
             >
               <MessagesSquareIcon className="size-3.5 text-fd-muted-foreground" />
