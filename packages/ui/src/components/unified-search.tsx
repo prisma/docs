@@ -6,6 +6,7 @@ import { useSearchContext } from "fumadocs-ui/contexts/search";
 import { FrameworkProvider } from "fumadocs-core/framework";
 import { usePathname, useParams } from "next/navigation";
 import { useDocsSearch } from "fumadocs-core/search/client";
+import { fetchClient } from "fumadocs-core/search/client/fetch";
 import {
   type SharedProps,
   SearchDialog,
@@ -60,7 +61,10 @@ export function UnifiedSearchDialog({
   onStableQuery?: (query: string) => void;
 }) {
   const [tag, setTag] = useState<string | undefined>("all");
-  const { search, setSearch, query } = useDocsSearch({ type: "fetch", api, tag, delayMs: 180 });
+  const { search, setSearch, query } = useDocsSearch({
+    client: fetchClient({ api, tag }),
+    delayMs: 180,
+  });
   const lastCapturedQuery = useRef<string | null>(null);
   useEffect(() => {
     if (

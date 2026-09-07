@@ -2,7 +2,7 @@ import { createSearchAPI } from "fumadocs-core/search/server";
 import index from "./search-index";
 
 const labels = { website: "Website", docs: "Docs", blog: "Blog" };
-// Fumadocs builds and reuses an in-memory Orama index lazily on the first query.
+// Fumadocs builds and reuses an in-memory ZBSearch index lazily on the first query.
 const engines = new Map<string, ReturnType<typeof createSearchAPI>>();
 export async function searchPages(query: string, source = "all") {
   if (!query.trim() || !/[\p{L}\p{N}]/u.test(query)) return [];
