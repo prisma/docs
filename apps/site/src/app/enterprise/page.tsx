@@ -4,7 +4,7 @@ import { Texture } from "@/components/brand/texture";
 import { PrismButton } from "@/components/brand/prism-button";
 
 export const metadata = createPageMetadata({
-  title: "Enterprise",
+  title: "Prisma Enterprise | ORM Support and Database Workflows for Teams",
   description:
     "Enterprise-level support, security, and guidance for teams running Prisma in production.",
   path: "/enterprise",
