@@ -2,6 +2,12 @@ name: Sync Docs Search
 
 on:
   workflow_dispatch:
+    inputs:
+      operation:
+        description: Sync docs or inspect the existing search stores
+        type: choice
+        default: sync-docs
+        options: [sync-docs, inspect]
   push:
     branches: [main]
     paths: [apps/docs/content/docs/**/*.mdx]
@@ -31,7 +37,16 @@ jobs:
           node-version: "24"
           cache: "pnpm"
 
+      - name: Inspect search stores
+        if: ${{ inputs.operation == 'inspect' }}
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm --filter docs exec tsx ../../packages/ui/scripts/inspect-mixedbread.ts
+        env:
+          MIXEDBREAD_API_KEY: ${{ secrets.MIXEDBREAD_API_KEY }}
+
       - name: Upload Docs
+        if: ${{ inputs.operation != 'inspect' }}
         run: pnpm dlx @mixedbread/cli store sync "${MIXEDBREAD_VECTOR_STORE_ID}" "apps/docs/content/docs/**/*.mdx" --yes --strategy fast
         env:
           MXBAI_API_KEY: ${{ secrets.MIXEDBREAD_API_KEY }}
