@@ -3,7 +3,6 @@ import { unified } from "unified";
 import remarkParse from "remark-parse";
 import { toString } from "mdast-util-to-string";
 import type { SortedResult } from "fumadocs-core/search";
-import { searchWebsite } from "./website-search";
 
 type Source = "all" | "website" | "docs" | "blog";
 const sources = new Set<string>(["all", "website", "docs", "blog"]);
@@ -13,6 +12,7 @@ type Chunk = {
   file_id?: string;
   chunk_index?: number;
   generated_metadata?: Record<string, unknown> | null;
+  metadata?: unknown;
 };
 
 function slugger(value: string): string {
@@ -34,11 +34,20 @@ function extractHeadingTitle(text: string): string {
 }
 
 // These are the existing Mixedbread stores; do not replace them with a local index.
-const stores = { docs: "web-search", blog: "blog-search" };
+const stores = { website: "website-search", docs: "web-search", blog: "blog-search" };
+function sourceOfUrl(url: string): Exclude<Source, "all"> {
+  if (url === "/docs" || url.startsWith("/docs/")) return "docs";
+  if (url === "/blog" || url.startsWith("/blog/")) return "blog";
+  return "website";
+}
 function resultFromChunk(item: Chunk): SortedResult | undefined {
-  const metadata = item.generated_metadata;
-  if (!metadata) return;
-  const blog = typeof metadata.slug === "string" && !!metadata.slug;
+  const fileMetadata =
+    typeof item.metadata === "object" && item.metadata !== null
+      ? (item.metadata as Record<string, unknown>)
+      : {};
+  const metadata = { ...item.generated_metadata, ...fileMetadata };
+  const website = fileMetadata.source === "website";
+  const blog = !website && typeof metadata.slug === "string" && !!metadata.slug;
   const raw = blog ? metadata.slug : metadata.url;
   if (typeof raw !== "string" || !raw || raw === "#") return;
   let path: string;
@@ -53,8 +62,9 @@ function resultFromChunk(item: Chunk): SortedResult | undefined {
     return;
   }
   if (/^\/(?:docs\/)?eclipse(?:\/|$)/.test(path)) return;
-  const source = blog ? "blog" : "docs";
-  if (!new RegExp(`^/${source}(?:/|$)`).test(path)) path = `/${source}${path}`;
+  const source = website ? "website" : blog ? "blog" : "docs";
+  if (!website && !new RegExp(`^/${source}(?:/|$)`).test(path)) path = `/${source}${path}`;
+  if (website && sourceOfUrl(path) !== "website") return;
   path = path.replace(/^\/docs\/orm\/latest(?=\/|$)/, "/docs/orm");
   if (path.length > 1) path = path.replace(/\/$/, "");
   const title = blog ? metadata.metaTitle || metadata.title : metadata.title;
@@ -63,7 +73,7 @@ function resultFromChunk(item: Chunk): SortedResult | undefined {
     type: "page",
     content: typeof title === "string" && title ? title : "Untitled",
     url: path,
-    breadcrumbs: [blog ? "Blog" : "Docs"],
+    breadcrumbs: [website ? "Website" : blog ? "Blog" : "Docs"],
   };
 }
 
@@ -71,10 +81,10 @@ export function createUnifiedSearch(getClient: () => Mixedbread) {
   async function searchPages(query: string, source: Source = "all"): Promise<SortedResult[]> {
     query = query.trim().slice(0, 200);
     if (!query || !/[\p{L}\p{N}]/u.test(query)) return [];
-    if (source === "website") return searchWebsite(query);
     const response = await getClient().stores.search({
       query,
-      store_identifiers: source === "all" ? [stores.docs, stores.blog] : [stores[source]],
+      store_identifiers:
+        source === "all" ? [stores.website, stores.docs, stores.blog] : [stores[source]],
       top_k: 20,
       search_options: { ...(source !== "blog" ? { rerank: true } : {}), return_metadata: true },
     });
@@ -84,8 +94,7 @@ export function createUnifiedSearch(getClient: () => Mixedbread) {
     for (const chunk of response.data) {
       const result = resultFromChunk(chunk);
       if (!result) continue;
-      if (source !== "all" && result.url !== `/${source}` && !result.url.startsWith(`/${source}/`))
-        continue;
+      if (source !== "all" && sourceOfUrl(result.url) !== source) continue;
       if (!seenPages.has(result.url)) {
         seenPages.add(result.url);
         results.push(result);
@@ -103,12 +112,6 @@ export function createUnifiedSearch(getClient: () => Mixedbread) {
           });
         }
       }
-    }
-    // Existing stores cover docs/blog. Keep marketing pages searchable until they
-    // are indexed in Mixedbread too; never substitute local results on API failure.
-    if (source === "all") {
-      const website = await searchWebsite(query);
-      return [...results.slice(0, 25), ...website.slice(0, 5)];
     }
     return results.slice(0, 30);
   }
@@ -130,12 +133,7 @@ export function createUnifiedSearch(getClient: () => Mixedbread) {
       const results = await searchPages(url.searchParams.get("query") || "", source as Source);
       return Response.json(
         results.map((result) => {
-          const kind =
-            result.url === "/docs" || result.url.startsWith("/docs/")
-              ? "docs"
-              : result.url === "/blog" || result.url.startsWith("/blog/")
-                ? "blog"
-                : "website";
+          const kind = sourceOfUrl(result.url);
           return { ...result, url: new URL(result.url, origins[kind]).href };
         }),
       );

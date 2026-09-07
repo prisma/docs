@@ -47,6 +47,14 @@ const client = new Mixedbread({
     ];
     return Response.json({
       data: [
+        ...(body.store_identifiers.includes("website-search")
+          ? [
+              {
+                file_id: "website",
+                metadata: { source: "website", title: "Prisma Postgres", url: "/postgres" },
+              },
+            ]
+          : []),
         ...(body.store_identifiers.includes("web-search") ? docs : []),
         ...(body.store_identifiers.includes("blog-search") ? blog : []),
       ],
@@ -69,13 +77,19 @@ assert.deepEqual(requests.at(-1)?.store_identifiers, ["blog-search"]);
 assert.equal(blog[0].url, "/blog/postgres-post");
 assert.equal(blog[0].content, "Postgres blog");
 const all = await searchPages("postgres");
-assert.deepEqual(requests.at(-1)?.store_identifiers, ["web-search", "blog-search"]);
+assert.deepEqual(requests.at(-1)?.store_identifiers, [
+  "website-search",
+  "web-search",
+  "blog-search",
+]);
 assert.ok(all.some((item) => item.url.startsWith("/docs/")));
 assert.ok(all.some((item) => item.url.startsWith("/blog/")));
 assert.ok(all.some((item) => item.url === "/postgres"));
 const count = requests.length;
-assert.ok((await searchPages("postgrez", "website")).some((item) => item.url === "/postgres"));
-assert.equal(requests.length, count);
+assert.ok((await searchPages("postgres", "website")).some((item) => item.url === "/postgres"));
+assert.equal(requests.length, count + 1);
+assert.deepEqual(requests.at(-1)?.store_identifiers, ["website-search"]);
+assert.equal(all[0].url, "/postgres");
 for (const source of ["docs", "blog", "website"]) {
   const response = await GET(
     new Request(`http://localhost:3001/docs/api/search?query=postgres&tag=${source}`),
@@ -165,5 +179,5 @@ assert.equal(
   503,
 );
 console.log(
-  "Mixedbread request routing, reranking, result normalization, deduplication, Eclipse exclusion, cross-zone URLs, website search, and failure handling passed (mock transport; no live relevance/analytics assertion).",
+  "Mixedbread request routing, reranking, result normalization, deduplication, Eclipse exclusion, cross-zone URLs, website Mixedbread routing, and failure handling passed (mock transport; no live relevance/analytics assertion).",
 );
