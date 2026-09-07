@@ -5,6 +5,7 @@ import { createUnifiedSearch } from "../src/lib/unified-search";
 const requests: Record<string, any>[] = [];
 let fail = false;
 let headingText = "# Connection pooling";
+let responseOverride: unknown[] | undefined;
 const client = new Mixedbread({
   apiKey: "test-only-not-a-real-key",
   maxRetries: 0,
@@ -13,6 +14,7 @@ const client = new Mixedbread({
     const body = await request.json();
     requests.push(body);
     if (fail) return Response.json({ error: "unavailable" }, { status: 503 });
+    if (responseOverride) return Response.json({ data: responseOverride });
     const docs = [
       {
         file_id: "docs",
@@ -104,6 +106,55 @@ for (const [text, expected] of [
   const results = await searchPages("postgres", "docs");
   assert.equal(results.find((result) => result.type === "heading")?.content, expected);
 }
+responseOverride = [
+  {
+    file_id: "one",
+    type: "text",
+    text: "Intro without heading",
+    generated_metadata: { title: "Docs", url: "/docs/guide" },
+  },
+  {
+    file_id: "one",
+    chunk_index: 1,
+    type: "text",
+    text: "# First heading",
+    generated_metadata: { title: "Docs", url: "/docs/guide" },
+  },
+  {
+    file_id: "one",
+    chunk_index: 2,
+    type: "text",
+    text: "# Second heading",
+    generated_metadata: { title: "Docs", url: "/docs/guide" },
+  },
+  {
+    file_id: "one",
+    chunk_index: 3,
+    type: "text",
+    text: "# First heading",
+    generated_metadata: { title: "Docs", url: "/docs/guide" },
+  },
+];
+assert.deepEqual(
+  (await searchPages("guide", "docs")).map((item) => item.url),
+  ["/docs/guide", "/docs/guide#first-heading", "/docs/guide#second-heading"],
+);
+for (const source of ["docs", "blog"] as const) {
+  responseOverride = [
+    {
+      file_id: "root",
+      generated_metadata:
+        source === "docs" ? { title: "Docs", url: "/docs" } : { title: "Blog", slug: "/blog" },
+    },
+  ];
+  const result = await GET(new Request(`http://localhost/api/search?query=root&tag=${source}`));
+  assert.equal(result.status, 200);
+  assert.equal(
+    (await result.json())[0].url,
+    `http://localhost:${source === "docs" ? 3001 : 3002}/${source}`,
+  );
+}
+responseOverride = undefined;
 fail = true;
 assert.equal((await GET(new Request("http://localhost/api/search?query=postgres"))).status, 503);
 const unavailable = createUnifiedSearch(() => {

@@ -78,23 +78,30 @@ export function createUnifiedSearch(getClient: () => Mixedbread) {
       top_k: 20,
       search_options: { ...(source !== "blog" ? { rerank: true } : {}), return_metadata: true },
     });
-    const seen = new Set<string>();
+    const seenPages = new Set<string>();
+    const seenHeadings = new Set<string>();
     const results: SortedResult[] = [];
     for (const chunk of response.data) {
       const result = resultFromChunk(chunk);
-      if (!result || seen.has(result.url)) continue;
-      if (source !== "all" && !result.url.startsWith(`/${source}/`)) continue;
-      seen.add(result.url);
-      results.push(result);
+      if (!result) continue;
+      if (source !== "all" && result.url !== `/${source}` && !result.url.startsWith(`/${source}/`))
+        continue;
+      if (!seenPages.has(result.url)) {
+        seenPages.add(result.url);
+        results.push(result);
+      }
       if (result.url.startsWith("/docs/") && chunk.type === "text" && chunk.text) {
         const heading = extractHeadingTitle(chunk.text);
-        if (heading)
+        const headingUrl = `${result.url}#${slugger(heading)}`;
+        if (heading && !seenHeadings.has(headingUrl)) {
+          seenHeadings.add(headingUrl);
           results.push({
             id: `${result.id}-${chunk.chunk_index}-heading`,
             type: "heading",
             content: heading,
-            url: `${result.url}#${slugger(heading)}`,
+            url: headingUrl,
           });
+        }
       }
     }
     // Existing stores cover docs/blog. Keep marketing pages searchable until they
@@ -123,11 +130,12 @@ export function createUnifiedSearch(getClient: () => Mixedbread) {
       const results = await searchPages(url.searchParams.get("query") || "", source as Source);
       return Response.json(
         results.map((result) => {
-          const kind = result.url.startsWith("/docs/")
-            ? "docs"
-            : result.url.startsWith("/blog/")
-              ? "blog"
-              : "website";
+          const kind =
+            result.url === "/docs" || result.url.startsWith("/docs/")
+              ? "docs"
+              : result.url === "/blog" || result.url.startsWith("/blog/")
+                ? "blog"
+                : "website";
           return { ...result, url: new URL(result.url, origins[kind]).href };
         }),
       );
