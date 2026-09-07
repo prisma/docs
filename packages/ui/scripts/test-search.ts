@@ -1,37 +1,104 @@
-// Run pnpm search:index first: tests require /postgres and content from all three sources.
 import assert from "node:assert/strict";
-import { GET, searchPages } from "../src/lib/unified-search";
+import Mixedbread from "@mixedbread/sdk";
+import { createUnifiedSearch } from "../src/lib/unified-search";
+
+const requests: Record<string, any>[] = [];
+let fail = false;
+const client = new Mixedbread({
+  apiKey: "test-only-not-a-real-key",
+  maxRetries: 0,
+  fetch: async (input, init) => {
+    const request = new Request(input, init);
+    const body = await request.json();
+    requests.push(body);
+    if (fail) return Response.json({ error: "unavailable" }, { status: 503 });
+    const docs = [
+      {
+        file_id: "docs",
+        chunk_index: 0,
+        type: "text",
+        text: "# Connection pooling",
+        generated_metadata: { title: "Postgres", url: "/orm/latest/overview" },
+      },
+      {
+        file_id: "docs",
+        chunk_index: 1,
+        generated_metadata: { title: "Duplicate", url: "https://www.prisma.io/docs/orm/overview" },
+      },
+      { file_id: "eclipse", generated_metadata: { title: "Eclipse", url: "/docs/eclipse/start" } },
+      {
+        file_id: "external",
+        generated_metadata: { title: "External", url: "https://example.com/docs/test" },
+      },
+      { file_id: "missing", generated_metadata: {} },
+    ];
+    const blog = [
+      {
+        file_id: "blog",
+        generated_metadata: {
+          title: "Postgres post",
+          metaTitle: "Postgres blog",
+          slug: "postgres-post",
+        },
+      },
+    ];
+    return Response.json({
+      data: [
+        ...(body.store_identifiers.includes("web-search") ? docs : []),
+        ...(body.store_identifiers.includes("blog-search") ? blog : []),
+      ],
+    });
+  },
+});
+const { GET, searchPages } = createUnifiedSearch(() => client);
 assert.deepEqual(await searchPages("   "), []);
 assert.deepEqual(await searchPages("🦄"), []);
-assert.deepEqual(await searchPages("zz_nonexistent_unified_search_12345"), []);
-for (const source of ["website", "docs", "blog"]) {
-  const results = await searchPages("postgres", source);
-  assert.ok(results.length > 0);
-  assert.ok(
-    results.every((item) =>
-      source === "website"
-        ? !/^\/(docs|blog)(\/|$)/.test(item.url)
-        : item.url.startsWith("/" + source + "/"),
-    ),
-  );
-  assert.equal(new Set(results.map((item) => item.url)).size, results.length);
-}
-assert.ok((await searchPages("postgrez", "website")).some((item) => item.url === "/postgres"));
+assert.equal(requests.length, 0);
+const docs = await searchPages("postgres", "docs");
+assert.deepEqual(requests.at(-1)?.store_identifiers, ["web-search"]);
+assert.deepEqual(requests.at(-1)?.search_options, { rerank: true, return_metadata: true });
+assert.deepEqual(
+  docs.map((item) => item.url),
+  ["/docs/orm/overview", "/docs/orm/overview#connection-pooling"],
+);
+const blog = await searchPages("postgres", "blog");
+assert.deepEqual(requests.at(-1)?.store_identifiers, ["blog-search"]);
+assert.equal(blog[0].url, "/blog/postgres-post");
+assert.equal(blog[0].content, "Postgres blog");
 const all = await searchPages("postgres");
+assert.deepEqual(requests.at(-1)?.store_identifiers, ["web-search", "blog-search"]);
 assert.ok(all.some((item) => item.url.startsWith("/docs/")));
 assert.ok(all.some((item) => item.url.startsWith("/blog/")));
 assert.ok(all.some((item) => item.url === "/postgres"));
-const response = await GET(
-  new Request("http://localhost:3001/docs/api/search?query=postgres&tag=website"),
-);
-assert.equal(response.status, 200);
-for (const item of await response.json())
-  assert.equal(
-    new URL(item.url).origin,
-    new URL(process.env.NEXT_SITE_ORIGIN || "http://localhost:3000").origin,
+const count = requests.length;
+assert.ok((await searchPages("postgrez", "website")).some((item) => item.url === "/postgres"));
+assert.equal(requests.length, count);
+for (const source of ["docs", "blog", "website"]) {
+  const response = await GET(
+    new Request(`http://localhost:3001/docs/api/search?query=postgres&tag=${source}`),
   );
+  assert.equal(response.status, 200);
+  const expected =
+    source === "docs"
+      ? "http://localhost:3001"
+      : source === "blog"
+        ? "http://localhost:3002"
+        : "http://localhost:3000";
+  for (const item of await response.json()) assert.equal(new URL(item.url).origin, expected);
+}
 assert.equal(
   (await GET(new Request("http://localhost/api/search?query=test&tag=bad"))).status,
   400,
 );
-console.log("Search results, typo tolerance, filters, deduplication, and cross-app URLs passed.");
+fail = true;
+assert.equal((await GET(new Request("http://localhost/api/search?query=postgres"))).status, 503);
+const unavailable = createUnifiedSearch(() => {
+  throw new Error("Missing key");
+});
+assert.equal(
+  (await unavailable.GET(new Request("http://localhost/api/search?query=postgres"))).status,
+  503,
+);
+console.log(
+  "Mixedbread request routing, reranking, result normalization, deduplication, Eclipse exclusion, cross-zone URLs, website search, and failure handling passed (mock transport; no live relevance/analytics assertion).",
+);

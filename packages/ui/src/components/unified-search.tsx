@@ -63,7 +63,7 @@ export function UnifiedSearchDialog({
   const [tag, setTag] = useState<string | undefined>("all");
   const { search, setSearch, query } = useDocsSearch({
     client: fetchClient({ api, tag }),
-    delayMs: 180,
+    delayMs: 500,
   });
   const lastCapturedQuery = useRef<string | null>(null);
   useEffect(() => {
@@ -72,6 +72,7 @@ export function UnifiedSearchDialog({
       !open ||
       !search.trim() ||
       query.isLoading ||
+      query.error ||
       query.data === undefined ||
       query.data === "empty"
     )
@@ -83,7 +84,7 @@ export function UnifiedSearchDialog({
       }
     }, 1500);
     return () => clearTimeout(timer);
-  }, [onStableQuery, open, search, query.isLoading, query.data]);
+  }, [onStableQuery, open, search, query.isLoading, query.data, query.error]);
   return (
     <FrameworkProvider useRouter={useSearchRouter} usePathname={usePathname} useParams={useParams}>
       <SearchDialog
@@ -101,7 +102,13 @@ export function UnifiedSearchDialog({
             <SearchDialogInput placeholder="Search all of Prisma…" />
             <SearchDialogClose />
           </SearchDialogHeader>
-          <SearchDialogList items={query.data !== "empty" ? query.data : null} />
+          {query.error ? (
+            <p role="alert" className="px-4 py-6 text-sm text-fd-muted-foreground">
+              Search is temporarily unavailable. Please try again.
+            </p>
+          ) : (
+            <SearchDialogList items={query.data !== "empty" ? query.data : null} />
+          )}
           <SearchDialogFooter>
             <TagsList tag={tag} onTagChange={setTag}>
               {Object.entries({ all: "All", website: "Website", docs: "Docs", blog: "Blog" }).map(
