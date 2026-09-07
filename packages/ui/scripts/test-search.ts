@@ -4,6 +4,7 @@ import { createUnifiedSearch } from "../src/lib/unified-search";
 
 const requests: Record<string, any>[] = [];
 let fail = false;
+let headingText = "# Connection pooling";
 const client = new Mixedbread({
   apiKey: "test-only-not-a-real-key",
   maxRetries: 0,
@@ -17,7 +18,7 @@ const client = new Mixedbread({
         file_id: "docs",
         chunk_index: 0,
         type: "text",
-        text: "# Connection pooling",
+        text: headingText,
         generated_metadata: { title: "Postgres", url: "/orm/latest/overview" },
       },
       {
@@ -90,6 +91,19 @@ assert.equal(
   (await GET(new Request("http://localhost/api/search?query=test&tag=bad"))).status,
   400,
 );
+for (const [text, expected] of [
+  ["## **Connection** `pooling`", "Connection pooling"],
+  ["# [Connection](https://example.com) pooling", "Connection pooling"],
+  ["# <em>Connection</em> pooling", "Connection pooling"],
+  ["# connection_limit and pooling", "connection_limit and pooling"],
+  ["# Connection pooling ###", "Connection pooling"],
+  ["Ordinary paragraph", undefined],
+  ["#not-a-heading", undefined],
+] as const) {
+  headingText = text;
+  const results = await searchPages("postgres", "docs");
+  assert.equal(results.find((result) => result.type === "heading")?.content, expected);
+}
 fail = true;
 assert.equal((await GET(new Request("http://localhost/api/search?query=postgres"))).status, 503);
 const unavailable = createUnifiedSearch(() => {
