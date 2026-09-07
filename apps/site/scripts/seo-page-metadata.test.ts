@@ -101,9 +101,7 @@ type MetadataArgs = { title: string; description: string; ogKicker?: string };
 
 /** Reads a `"…"` literal out of the `createPageMetadata({ … })` call source. */
 function readStringOption(block: string, option: string): string | undefined {
-  const match = block.match(
-    new RegExp(`\\n\\s+${option}:\\s*(?:\\n\\s+)?("(?:[^"\\\\]|\\\\.)*")`),
-  );
+  const match = block.match(new RegExp(`\\n\\s+${option}:\\s*(?:\\n\\s+)?("(?:[^"\\\\]|\\\\.)*")`));
   return match ? (JSON.parse(match[1]) as string) : undefined;
 }
 
