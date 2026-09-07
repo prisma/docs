@@ -1,10 +1,15 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { createServer } from "node:http";
+import { readFileSync } from "node:fs";
 import {
   applyRules,
   codeRanges,
   compileSource,
   findHrefs,
+  fetchFollowing,
+  resolvedWithFragment,
+  resolveOffline,
   isOutOfScopeHref,
   parseNextRedirects,
   repairMisplacedQuery,
@@ -71,7 +76,10 @@ test("leaves a correctly ordered query and fragment untouched", () => {
 
 test("a basePath zone can only express its own paths root-relatively", () => {
   // Inside apps/blog, `/x` means `/blog/x`, so a /docs target must stay absolute.
-  assert.equal(toHrefForZone(new URL("https://www.prisma.io/blog/post#frag"), "/blog"), "/post#frag");
+  assert.equal(
+    toHrefForZone(new URL("https://www.prisma.io/blog/post#frag"), "/blog"),
+    "/post#frag",
+  );
   assert.equal(
     toHrefForZone(new URL("https://www.prisma.io/docs/postgres"), "/blog"),
     "https://www.prisma.io/docs/postgres",
@@ -145,11 +153,19 @@ test("compiles Next.js redirect sources, including the :path* / :path+ differenc
 
 test("substitutes captured segments into the destination", () => {
   assert.equal(
-    applyRules("/cli/dev/a/b", [{ source: "/cli/dev/:path+", destination: "/cli/v7/dev/:path+", prefix: "" }]),
+    applyRules("/cli/dev/a/b", [
+      { source: "/cli/dev/:path+", destination: "/cli/v7/dev/:path+", prefix: "" },
+    ]),
     "/cli/v7/dev/a/b",
   );
-  assert.equal(applyRules("/showcase", [{ source: "/showcase", destination: "/customers", prefix: "" }]), "/customers");
-  assert.equal(applyRules("/untouched", [{ source: "/showcase", destination: "/customers", prefix: "" }]), null);
+  assert.equal(
+    applyRules("/showcase", [{ source: "/showcase", destination: "/customers", prefix: "" }]),
+    "/customers",
+  );
+  assert.equal(
+    applyRules("/untouched", [{ source: "/showcase", destination: "/customers", prefix: "" }]),
+    null,
+  );
 });
 
 test("reads a Next config redirect table without importing it", () => {
@@ -169,4 +185,108 @@ test("reads a Next config redirect table without importing it", () => {
   ].join("\n");
 
   assert.deepEqual(parseNextRedirects(config), [{ source: "/a", destination: "/b" }]);
+});
+
+test("native anchors keep /blog while router links use the app basePath", () => {
+  const source =
+    '<a target="_blank"\n href="/blog/post">native</a> [markdown](/post) <Link href="/post">router</Link>';
+  const occurrences = findHrefs(source);
+  assert.deepEqual(
+    occurrences.map((o) => Boolean(o.nativeAnchor)),
+    [true, false, false],
+  );
+  for (const occurrence of occurrences) {
+    const absolute = toAbsoluteSameSiteUrl(occurrence.raw, "/blog", occurrence.nativeAnchor)!;
+    assert.equal(absolute.href, "https://www.prisma.io/blog/post");
+    assert.equal(
+      toHrefForZone(absolute, "/blog", occurrence.nativeAnchor),
+      occurrence.nativeAnchor ? "https://www.prisma.io/blog/post" : "/post",
+    );
+  }
+  const post = readFileSync(
+    new URL(
+      "../apps/blog/content/blog/accelerate-preview-release-ab229e69ed2/index.mdx",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+  const link = findHrefs(post).find(
+    (o) => o.nativeAnchor && o.raw.includes("benefits-and-challenges"),
+  )!;
+  assert.equal(
+    toAbsoluteSameSiteUrl(link.raw, "/blog", link.nativeAnchor)?.pathname,
+    "/blog/benefits-and-challenges-of-caching-database-query-results-x2s9ei21e8kq",
+  );
+});
+
+test("online redirects preserve fragments through multiple hops and HEAD fallback", async () => {
+  const server = createServer((req, res) => {
+    if (req.method === "HEAD" && req.url === "/get-only") {
+      res.writeHead(405).end();
+      return;
+    }
+    const redirects: Record<string, string> = {
+      "/old": "/middle#named-constraints-and-indexes",
+      "/middle": "/new",
+      "/empty": "/new#",
+      "/get-only": "/new#get-section",
+      "/loop": "/loop",
+    };
+    const location = redirects[req.url ?? ""];
+    if (location) res.writeHead(308, { Location: location }).end();
+    else res.end("ok");
+  });
+  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+  try {
+    const address = server.address();
+    assert.ok(address && typeof address !== "string");
+    const origin = `http://127.0.0.1:${address.port}`;
+    assert.deepEqual(await fetchFollowing(`${origin}/old`), {
+      finalUrl: `${origin}/new#named-constraints-and-indexes`,
+      status: 200,
+    });
+    assert.equal(
+      (await fetchFollowing(`${origin}/get-only`)).finalUrl,
+      `${origin}/new#get-section`,
+    );
+    assert.equal((await fetchFollowing(`${origin}/empty#original`)).finalUrl, `${origin}/new#`);
+    await assert.rejects(fetchFollowing(`${origin}/loop`), /Too many redirects/);
+  } finally {
+    server.closeAllConnections();
+    await new Promise<void>((resolve, reject) =>
+      server.close((error) => (error ? reject(error) : resolve())),
+    );
+  }
+});
+
+test("offline redirects and final replacements honor Location fragment precedence", () => {
+  const origin = "https://www.prisma.io";
+  const rules = [
+    { source: "/old", destination: "/middle#section", prefix: "" },
+    { source: "/middle", destination: "/new", prefix: "" },
+  ];
+  const resolution = resolveOffline(`${origin}/old`, rules);
+  assert.equal(resolution.finalUrl, `${origin}/new#section`);
+  assert.equal(
+    resolvedWithFragment(resolution.finalUrl, new URL(`${origin}/old#author`)).hash,
+    "#section",
+  );
+  assert.equal(
+    resolvedWithFragment(`${origin}/new`, new URL(`${origin}/old#author`)).hash,
+    "#author",
+  );
+  assert.equal(
+    resolvedWithFragment(`${origin}/new#`, new URL(`${origin}/old#author`)).href,
+    `${origin}/new#`,
+  );
+  for (const post of ["wnip-q3-hpk7pyth8v", "wnip-q4-dsk0golh8v"]) {
+    const source = readFileSync(
+      new URL(`../apps/blog/content/blog/${post}/index.mdx`, import.meta.url),
+      "utf8",
+    );
+    assert.match(
+      source,
+      /\[Named Constraints upgrade guide\]\(https:\/\/www\.prisma\.io\/docs\/guides\/upgrade-prisma-orm\/v3#named-constraints-and-indexes\)/,
+    );
+  }
 });

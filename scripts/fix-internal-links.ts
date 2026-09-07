@@ -29,7 +29,10 @@
  *   blog content, target in /blog            -> blog-relative  `/my-post`
  *   blog content, anything else              -> absolute       `https://www.prisma.io/...`
  *
- * Cross-zone targets stay absolute on purpose. MDX anchors render through
+ * Native MDX <a> hrefs stay absolute in every zone: they bypass next/link,
+ * so root-relative input is resolved against the host without a basePath.
+ *
+ * Cross-zone targets stay absolute on purpose. Markdown links render through
  * fumadocs' `Link`, which treats a root-relative href as internal and hands it
  * to `next/link`; a client-side navigation into a different zone is not
  * something the router can serve. That also matches the convention already in
@@ -67,11 +70,11 @@ const CROSS_ZONE_PREFIXES = ["/docs", "/blog"];
 /** Query parameters that carry no meaning for the destination page. */
 const TRACKING_PARAMS = /^(utm_|via$)/i;
 /** Assets: `src` is explicitly out of scope, and these are never page links. */
-const ASSET_EXTENSIONS =
-  /\.(png|jpe?g|gif|svg|webp|avif|ico|mp4|webm|mov|css|js|mjs|zip|woff2?)$/i;
+const ASSET_EXTENSIONS = /\.(png|jpe?g|gif|svg|webp|avif|ico|mp4|webm|mov|css|js|mjs|zip|woff2?)$/i;
 
 const CACHE_PATH =
-  process.env.LINKS_FIX_CACHE ?? path.join(repoRoot, "node_modules", ".cache", "fix-internal-links.json");
+  process.env.LINKS_FIX_CACHE ??
+  path.join(repoRoot, "node_modules", ".cache", "fix-internal-links.json");
 
 interface Zone {
   /** Content directory, relative to the repo root. */
@@ -101,13 +104,17 @@ export function isOutOfScopeHref(href: string): boolean {
  * Turns an href found in `zone` into the absolute production URL it points at,
  * or `null` when it is not a same-site page link.
  */
-export function toAbsoluteSameSiteUrl(href: string, basePath: string): URL | null {
+export function toAbsoluteSameSiteUrl(
+  href: string,
+  basePath: string,
+  nativeAnchor = false,
+): URL | null {
   if (isOutOfScopeHref(href)) return null;
 
   let url: URL;
   if (href.startsWith("/")) {
     if (ASSET_EXTENSIONS.test(href.split(/[?#]/, 1)[0])) return null;
-    url = new URL(`${SITE_ORIGIN}${basePath}${href}`);
+    url = new URL(`${SITE_ORIGIN}${nativeAnchor ? "" : basePath}${href}`);
   } else {
     try {
       url = new URL(href);
@@ -153,7 +160,10 @@ export function repairMisplacedQuery(url: URL): { url: URL; repaired: boolean } 
   if (!url.hash.includes("?")) return { url, repaired: false };
 
   const out = new URL(url.toString());
-  const [fragment, query] = [out.hash.slice(1, out.hash.indexOf("?")), out.hash.slice(out.hash.indexOf("?") + 1)];
+  const [fragment, query] = [
+    out.hash.slice(1, out.hash.indexOf("?")),
+    out.hash.slice(out.hash.indexOf("?") + 1),
+  ];
   out.hash = fragment ? `#${fragment}` : "";
 
   // Anything in that stray query that is not tracking is preserved.
@@ -165,7 +175,9 @@ export function repairMisplacedQuery(url: URL): { url: URL; repaired: boolean } 
 }
 
 /** Renders the final URL in the form this zone should use. */
-export function toHrefForZone(finalUrl: URL, basePath: string): string {
+export function toHrefForZone(finalUrl: URL, basePath: string, nativeAnchor = false): string {
+  // Native MDX <a> elements bypass next/link and must keep the full path.
+  if (nativeAnchor) return finalUrl.toString();
   const isSameSite = finalUrl.hostname === "www.prisma.io";
   if (!isSameSite) return finalUrl.toString();
 
@@ -181,7 +193,11 @@ export function toHrefForZone(finalUrl: URL, basePath: string): string {
   }
 
   // The host zone: keep cross-zone links absolute (see the header comment).
-  if (CROSS_ZONE_PREFIXES.some((p) => finalUrl.pathname === p || finalUrl.pathname.startsWith(`${p}/`))) {
+  if (
+    CROSS_ZONE_PREFIXES.some(
+      (p) => finalUrl.pathname === p || finalUrl.pathname.startsWith(`${p}/`),
+    )
+  ) {
     return finalUrl.toString();
   }
 
@@ -206,7 +222,9 @@ type Cache = Record<string, Resolution>;
 async function loadCache(): Promise<Cache> {
   if (!existsSync(CACHE_PATH)) return {};
   try {
-    return JSON.parse(await readFile(CACHE_PATH, "utf8")) as Cache;
+    const cached = JSON.parse(await readFile(CACHE_PATH, "utf8"));
+    // Older resolutions discarded Location fragments; they cannot be reused.
+    return cached.version === 2 ? (cached.resolutions as Cache) : {};
   } catch {
     return {};
   }
@@ -214,22 +232,47 @@ async function loadCache(): Promise<Cache> {
 
 async function saveCache(cache: Cache): Promise<void> {
   await mkdir(path.dirname(CACHE_PATH), { recursive: true });
-  await writeFile(CACHE_PATH, `${JSON.stringify(cache, null, 2)}\n`);
+  await writeFile(CACHE_PATH, `${JSON.stringify({ version: 2, resolutions: cache }, null, 2)}\n`);
 }
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-async function fetchFollowing(url: string): Promise<Resolution> {
+/** Follow browser fragment inheritance, including an explicit empty `#`. */
+export function redirectTarget(current: URL, location: string): URL {
+  const target = new URL(location, current);
+  if (!location.includes("#") && current.href.includes("#")) {
+    target.href += current.href.slice(current.href.indexOf("#"));
+  }
+  return target;
+}
+
+/** Restore the author's fragment only when no redirect supplied one. */
+export function resolvedWithFragment(finalUrl: string, original: URL): URL {
+  return redirectTarget(original, finalUrl);
+}
+
+export async function fetchFollowing(url: string): Promise<Resolution> {
   for (const method of ["HEAD", "GET"] as const) {
-    const response = await fetch(url, {
-      method,
-      redirect: "follow",
-      headers: { "user-agent": "prisma-web-link-hygiene/1.0" },
-      signal: AbortSignal.timeout(30_000),
-    });
-    // Some hosts answer HEAD with 403/405 but serve GET fine.
-    if (method === "HEAD" && (response.status === 403 || response.status === 405)) continue;
-    return { finalUrl: response.url || url, status: response.status };
+    let current = new URL(url);
+    for (let hop = 0; hop <= 20; hop++) {
+      const response = await fetch(current, {
+        method,
+        redirect: "manual",
+        headers: { "user-agent": "prisma-web-link-hygiene/1.0" },
+        signal: AbortSignal.timeout(30_000),
+      });
+      await response.body?.cancel();
+      const location = response.headers.get("location");
+      if ([301, 302, 303, 307, 308].includes(response.status) && location !== null) {
+        if (hop === 20) throw new Error(`Too many redirects: ${url}`);
+        current = redirectTarget(current, location);
+        continue;
+      }
+      // Some hosts answer HEAD with 403/405 but serve GET fine.
+      if (method === "HEAD" && (response.status === 403 || response.status === 405)) break;
+      // response.url omits fragments, so retain the URL built from Location.
+      return { finalUrl: current.href, status: response.status };
+    }
   }
   throw new Error("unreachable");
 }
@@ -303,7 +346,6 @@ export function applyRules(pathname: string, rules: Rule[]): string | null {
   return null;
 }
 
-
 /**
  * Reads the `redirects()` table out of a `next.config.mjs` as text.
  *
@@ -357,7 +399,9 @@ async function loadOfflineRules(): Promise<Rule[]> {
   for (const [file, prefix] of vercelFiles) {
     const full = path.join(repoRoot, file);
     if (!existsSync(full)) continue;
-    const json = JSON.parse(await readFile(full, "utf8")) as { redirects?: Array<Record<string, string>> };
+    const json = JSON.parse(await readFile(full, "utf8")) as {
+      redirects?: Array<Record<string, string>>;
+    };
     for (const rule of json.redirects ?? []) {
       if (rule.source && rule.destination) {
         rules.push({ source: rule.source, destination: rule.destination, prefix });
@@ -381,7 +425,7 @@ async function loadOfflineRules(): Promise<Rule[]> {
   return rules;
 }
 
-function resolveOffline(url: string, rules: Rule[]): Resolution {
+export function resolveOffline(url: string, rules: Rule[]): Resolution {
   let current = new URL(url);
   const seen = new Set<string>();
 
@@ -393,8 +437,9 @@ function resolveOffline(url: string, rules: Rule[]): Resolution {
     const next = applyRules(current.pathname, rules);
     if (!next) return { finalUrl: current.toString(), status: 200, offline: true };
 
-    const target = next.startsWith("http") ? new URL(next) : new URL(`${current.origin}${next}`);
-    for (const [k, v] of current.searchParams) if (!target.searchParams.has(k)) target.searchParams.set(k, v);
+    const target = redirectTarget(current, next);
+    for (const [k, v] of current.searchParams)
+      if (!target.searchParams.has(k)) target.searchParams.set(k, v);
     current = target;
   }
 
@@ -406,6 +451,7 @@ function resolveOffline(url: string, rules: Rule[]): Resolution {
 export interface Occurrence {
   /** The href exactly as written in the file. */
   raw: string;
+  nativeAnchor?: boolean;
   start: number;
   end: number;
 }
@@ -455,7 +501,8 @@ export function codeRanges(source: string): Array<[number, number]> {
 export function findHrefs(source: string): Occurrence[] {
   const found: Occurrence[] = [];
 
-  const markdown = /(!?)\[(?:[^\[\]]|\[[^\]]*\])*\]\(\s*(<[^>]*>|[^()\s]+)\s*(?:"[^"]*"|'[^']*')?\s*\)/g;
+  const markdown =
+    /(!?)\[(?:[^\[\]]|\[[^\]]*\])*\]\(\s*(<[^>]*>|[^()\s]+)\s*(?:"[^"]*"|'[^']*')?\s*\)/g;
   for (let m = markdown.exec(source); m; m = markdown.exec(source)) {
     if (m[1] === "!") continue; // image
     const rawWithBrackets = m[2];
@@ -468,7 +515,9 @@ export function findHrefs(source: string): Occurrence[] {
   const attribute = /href=("|')([^"']*)\1/g;
   for (let m = attribute.exec(source); m; m = attribute.exec(source)) {
     const start = m.index + `href=`.length + 1;
-    found.push({ raw: m[2], start, end: start + m[2].length });
+    const tagStart = source.lastIndexOf("<", m.index);
+    const nativeAnchor = /^<a\s/.test(source.slice(tagStart, m.index));
+    found.push({ raw: m[2], start, end: start + m[2].length, nativeAnchor });
   }
 
   // Markdown reference definitions: `[label]: /path`
@@ -543,7 +592,11 @@ async function main(): Promise<void> {
       fileSources.set(file, source);
 
       for (const occurrence of findHrefs(source)) {
-        const absolute = toAbsoluteSameSiteUrl(occurrence.raw, zone.basePath);
+        const absolute = toAbsoluteSameSiteUrl(
+          occurrence.raw,
+          zone.basePath,
+          occurrence.nativeAnchor,
+        );
         if (!absolute) continue;
 
         const { url: queryFixed, repaired } = repairMisplacedQuery(absolute);
@@ -554,9 +607,15 @@ async function main(): Promise<void> {
   }
 
   // 2. Resolve every distinct target once.
-  const targets = [...new Set(pending.map((p) => `${p.normalised.origin}${p.normalised.pathname}${p.normalised.search}`))];
+  const targets = [
+    ...new Set(
+      pending.map((p) => `${p.normalised.origin}${p.normalised.pathname}${p.normalised.search}`),
+    ),
+  ];
   const uncached = targets.filter((t) => !(t in cache));
-  process.stderr.write(`Resolving ${uncached.length} of ${targets.length} distinct URLs (${targets.length - uncached.length} cached)\n`);
+  process.stderr.write(
+    `Resolving ${uncached.length} of ${targets.length} distinct URLs (${targets.length - uncached.length} cached)\n`,
+  );
 
   let done = 0;
   let anySuccess = false;
@@ -575,12 +634,14 @@ async function main(): Promise<void> {
         // Nothing has ever succeeded: this sandbox has no outbound network.
         offline = true;
         offlineRules ??= await loadOfflineRules();
-        process.stderr.write("\nNo outbound network; falling back to the repo's redirect tables.\n");
+        process.stderr.write(
+          "\nNo outbound network; falling back to the repo's redirect tables.\n",
+        );
         return resolveOffline(target, offlineRules);
       }
       // A single URL failing after other successes is transient, a dead host,
       // or a redirect loop; report it rather than switching the whole run's
-      // method. `fetch` with `redirect: "follow"` throws on a loop, which is
+      // method. The resolver throws on a loop, which is
       // exactly how audit finding 1.1 shows up here.
       return { finalUrl: target, status: 0, error: String((failure as Error)?.message ?? failure) };
     }
@@ -591,7 +652,10 @@ async function main(): Promise<void> {
    * this PR is fixing still answers 404 upstream. Re-resolve those through the
    * repo's own redirect tables and re-verify the result against production.
    */
-  async function recoverVia404Redirects(target: string, resolution: Resolution): Promise<Resolution> {
+  async function recoverVia404Redirects(
+    target: string,
+    resolution: Resolution,
+  ): Promise<Resolution> {
     if (resolution.status !== 404 || offline) return resolution;
 
     offlineRules ??= await loadOfflineRules();
@@ -647,9 +711,7 @@ async function main(): Promise<void> {
       continue;
     }
 
-    const finalUrl = new URL(resolution.finalUrl);
-    // The fragment is ours, not the server's: keep what the author wrote.
-    finalUrl.hash = item.normalised.hash;
+    const finalUrl = resolvedWithFragment(resolution.finalUrl, item.normalised);
     if (finalUrl.pathname.length > 1 && finalUrl.pathname.endsWith("/")) {
       finalUrl.pathname = finalUrl.pathname.replace(/\/+$/, "");
     }
@@ -679,7 +741,7 @@ async function main(): Promise<void> {
       }
     }
 
-    const replacement = toHrefForZone(target, item.zone.basePath);
+    const replacement = toHrefForZone(target, item.zone.basePath, item.occurrence.nativeAnchor);
     if (replacement === item.occurrence.raw) continue;
 
     if (resolution.viaRepoRedirect) recoveredByNewRedirect.add(key);
@@ -714,23 +776,33 @@ async function main(): Promise<void> {
     skippedBecauseChainEndsAtHomepage: [...skippedRootDestination.values()].sort((a, b) =>
       a.resolvedFrom.localeCompare(b.resolvedFrom),
     ),
-    unresolved: [...unresolved.values()].sort((a, b) => a.resolvedFrom.localeCompare(b.resolvedFrom)),
+    unresolved: [...unresolved.values()].sort((a, b) =>
+      a.resolvedFrom.localeCompare(b.resolvedFrom),
+    ),
   };
 
   console.log(`\n${dryRun ? "[dry run] " : ""}files touched:        ${summary.filesTouched}`);
   console.log(`${dryRun ? "[dry run] " : ""}links rewritten:      ${summary.linksRewritten}`);
   console.log(`${dryRun ? "[dry run] " : ""}utm stripped:         ${summary.utmStripped}`);
-  console.log(`${dryRun ? "[dry run] " : ""}misplaced ?query:     ${summary.misplacedQueriesRepaired}`);
+  console.log(
+    `${dryRun ? "[dry run] " : ""}misplaced ?query:     ${summary.misplacedQueriesRepaired}`,
+  );
   console.log(`${dryRun ? "[dry run] " : ""}distinct URLs:        ${summary.distinctUrlsResolved}`);
-  console.log(`${dryRun ? "[dry run] " : ""}healed by new redirect: ${summary.recoveredByRedirectAddedInThisBranch.length}`);
+  console.log(
+    `${dryRun ? "[dry run] " : ""}healed by new redirect: ${summary.recoveredByRedirectAddedInThisBranch.length}`,
+  );
   console.log(`${dryRun ? "[dry run] " : ""}resolved offline:     ${summary.resolvedOffline}`);
-  console.log(`${dryRun ? "[dry run] " : ""}skipped, chain ends at /: ${summary.skippedBecauseChainEndsAtHomepage.reduce((n, i) => n + i.files.length, 0)} link(s) across ${summary.skippedBecauseChainEndsAtHomepage.length} URL(s)`);
+  console.log(
+    `${dryRun ? "[dry run] " : ""}skipped, chain ends at /: ${summary.skippedBecauseChainEndsAtHomepage.reduce((n, i) => n + i.files.length, 0)} link(s) across ${summary.skippedBecauseChainEndsAtHomepage.length} URL(s)`,
+  );
   for (const item of summary.skippedBecauseChainEndsAtHomepage) {
     console.log(`  ${item.resolvedFrom}  (${item.files.length} file(s))`);
   }
   console.log(`${dryRun ? "[dry run] " : ""}unresolved (non-200): ${summary.unresolved.length}`);
   for (const item of summary.unresolved) {
-    console.log(`  ${item.status}${item.error ? ` (${item.error})` : ""}  ${item.resolvedFrom}  (${item.files.length} file(s): ${item.files.slice(0, 3).join(", ")}${item.files.length > 3 ? ", …" : ""})`);
+    console.log(
+      `  ${item.status}${item.error ? ` (${item.error})` : ""}  ${item.resolvedFrom}  (${item.files.length} file(s): ${item.files.slice(0, 3).join(", ")}${item.files.length > 3 ? ", …" : ""})`,
+    );
   }
 
   if (reportPath) {
