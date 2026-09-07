@@ -10,13 +10,13 @@ export type LanguageSelectProps = ComponentProps<"button">;
 
 export function LanguageToggle(props: LanguageSelectProps): React.ReactElement {
   const context = useI18n();
-  const t = useTranslations();
+  const t = useTranslations({ note: "language switcher" });
   if (!context.locales) throw new Error("Missing `<I18nProvider />`");
 
   return (
     <Popover>
       <PopoverTrigger
-        aria-label={t("Choose a language")}
+        aria-label={t("Choose a language", { note: "aria-label" })}
         {...props}
         className={cn(
           buttonVariants({

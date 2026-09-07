@@ -86,7 +86,7 @@ export function PageTOCPopover({ className, children, ...rest }: ComponentProps<
 }
 
 export function PageTOCPopoverTrigger({ className, ...props }: ComponentProps<"button">) {
-  const t = useTranslations();
+  const t = useTranslations({ note: "table of contents" });
   const { open } = use(TocPopoverContext)!;
   const items = useTOCItems();
   const active = useActiveAnchor();
@@ -208,7 +208,7 @@ export function PageLastUpdate({
   date: value,
   ...props
 }: Omit<ComponentProps<"p">, "children"> & { date: Date }) {
-  const t = useTranslations();
+  const t = useTranslations({ note: "page footer" });
   const [date, setDate] = useState("");
 
   useEffect(() => {
@@ -268,7 +268,7 @@ export function PageFooter({ items, children, className, ...props }: FooterProps
 }
 
 function FooterItem({ item, index }: { item: Item; index: 0 | 1 }) {
-  const t = useTranslations();
+  const t = useTranslations({ note: "pagination" });
   const Icon = index === 0 ? ChevronLeft : ChevronRight;
 
   return (

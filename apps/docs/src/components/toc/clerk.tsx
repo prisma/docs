@@ -10,7 +10,7 @@ import { useTranslations } from "@fuma-translate/react";
 export function TOCItems({ ref, className, ...props }: ComponentProps<"div">) {
   const containerRef = useRef<HTMLDivElement>(null);
   const items = useTOCItems();
-  const t = useTranslations();
+  const t = useTranslations({ note: "table of contents" });
 
   const [svg, setSvg] = useState<{
     path: string;

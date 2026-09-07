@@ -47,7 +47,7 @@ export function LargeSearchToggle({
   hideIfDisabled?: boolean;
 }) {
   const { enabled, hotKey, setOpenSearch } = useSearchContext();
-  const t = useTranslations();
+  const t = useTranslations({ note: "search trigger" });
   if (hideIfDisabled && !enabled) return null;
 
   return (

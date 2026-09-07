@@ -9,7 +9,7 @@ import * as Primitive from "fumadocs-core/toc";
 export function TOCItems({ ref, className, ...props }: ComponentProps<"div">) {
   const containerRef = useRef<HTMLDivElement>(null);
   const items = useTOCItems();
-  const t = useTranslations();
+  const t = useTranslations({ note: "table of contents" });
 
   if (items.length === 0)
     return (

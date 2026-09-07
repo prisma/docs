@@ -168,7 +168,7 @@ export function DocsPage({
               className="inline-flex items-center gap-1.5 text-sm text-fd-muted-foreground"
             >
               <Text className="size-4" />
-              <T text="On this page" />
+              <T text="On this page" note="table of contents" />
             </h3>
             <TOCScrollArea>
               {/* Use TrackedTOCWrapper to track section views on quickstart pages */}
@@ -199,7 +199,7 @@ export function EditOnGitHub(props: ComponentProps<"a">) {
       {props.children ?? (
         <>
           <Edit className="size-3.5" />
-          <T text="Edit on GitHub" />
+          <T text="Edit on GitHub" note="edit page" />
         </>
       )}
     </a>
