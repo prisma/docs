@@ -3,19 +3,20 @@ import Mixedbread from "@mixedbread/sdk";
 import { searchPages, GET } from "../src/lib/unified-search";
 
 const client = new Mixedbread({ apiKey: process.env.MIXEDBREAD_API_KEY });
+let inspectionFailed = false;
 for (const name of ["web-search", "blog-search", "website-search"]) {
   try {
     const store = await client.stores.retrieve(name);
     console.log(JSON.stringify({ name, status: store.status }));
   } catch (error) {
-    if (error instanceof Mixedbread.APIError)
+    if (error instanceof Mixedbread.APIError) {
+      inspectionFailed = true;
       console.log(JSON.stringify({ name, status: error.status }));
-    else throw error;
-    if (process.argv.includes("--verify"))
-      throw new Error(`Required search store unavailable: ${name}`);
+    } else throw error;
   }
 }
-if (process.argv.includes("--verify")) {
+if (inspectionFailed) process.exitCode = 1;
+if (!inspectionFailed && process.argv.includes("--verify")) {
   for (const source of ["website", "docs", "blog", "all"] as const) {
     const result = await searchPages("Prisma Postgres", source);
     assert.ok(result.length, `${source}: no live results`);
