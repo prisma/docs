@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import Mixedbread from "@mixedbread/sdk";
 import { createUnifiedSearch } from "../src/lib/unified-search";
+import { assertSearchScope } from "./search-verification";
 
 const requests: Record<string, any>[] = [];
 let fail = false;
@@ -181,3 +182,19 @@ assert.equal(
 console.log(
   "Mixedbread request routing, reranking, result normalization, deduplication, Eclipse exclusion, cross-zone URLs, website Mixedbread routing, and failure handling passed (mock transport; no live relevance/analytics assertion).",
 );
+
+// Scope validation must reject leakage for both direct paths and HTTP result URLs.
+for (const origin of ["", "https://www.prisma.io"]) {
+  const page = (path: string) => ({ url: `${origin}${path}` });
+  assertSearchScope([page("/postgres"), page("/")], "website");
+  for (const path of ["/docs", "/docs/guide", "/blog", "/blog/post", "/eclipse/start"]) {
+    assert.throws(() => assertSearchScope([page("/postgres"), page(path)], "website"));
+  }
+  for (const source of ["docs", "blog"] as const) {
+    assertSearchScope([page(`/${source}`), page(`/${source}/guide`)], source);
+    assert.throws(() => assertSearchScope([page(`/${source}/guide`), page("/postgres")], source));
+  }
+  assertSearchScope([page("/postgres"), page("/docs/guide"), page("/blog/post")], "all");
+  assert.throws(() => assertSearchScope([page("/docs/eclipse/start")], "all"));
+}
+console.log("Direct and HTTP source-scope validation rejects mixed-source results.");
