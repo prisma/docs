@@ -56,11 +56,7 @@ export function SidebarBannerCarousel({ slides }: SidebarBannerCarouselProps) {
       setDismissedIds((prev) => {
         const next = new Set(prev);
         next.add(href);
-        try {
-          localStorage.setItem(DISMISSED_KEY, JSON.stringify([...next]));
-        } catch {
-          /* Dismiss without storage. */
-        }
+        localStorage.setItem(DISMISSED_KEY, JSON.stringify([...next]));
         return next;
       });
       setDismissingHref(null);
@@ -108,7 +104,7 @@ export function SidebarBannerCarousel({ slides }: SidebarBannerCarouselProps) {
           fights the theme it sits in. */}
       <div
         className={cn(
-          "border border-stroke-neutral group relative overflow-hidden rounded-square-high",
+          "spectrum-border spectrum-border-on group relative overflow-hidden rounded-square-high",
           "bg-card-wash shadow-drop-low transition-shadow hover:shadow-drop",
           "focus-within:ring-2 focus-within:ring-foreground-ppg",
         )}

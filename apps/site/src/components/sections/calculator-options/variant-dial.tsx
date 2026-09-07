@@ -6,7 +6,8 @@ import { fmtGB, fmtOps, fmtUSD, PRESETS, recommend, tToOps } from "./calc";
 import { RangeInput, useEstimator } from "./controls";
 
 // Spectrum gradient matching the brand CTA glow (see prism-button.tsx).
-const SPECTRUM = "var(--color-prism-cyan-400)";
+const SPECTRUM =
+  "linear-gradient(85deg, #01d7e4 0%, #f3c306 25%, #f37a03 50%, #f43531 74%, #f00e5c 100%)";
 
 // Option B — "The Prism Dial". One monumental slider: usage passes through
 // the spectrum, and the plan boundaries are marked right on the track, so
@@ -32,7 +33,7 @@ export function VariantDial() {
   }, [gb]);
 
   return (
-    <section className="bg-card">
+    <section className="bg-white">
       <div className="mx-auto max-w-4xl px-4 py-20 text-center sm:px-8">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
           Pricing calculator
@@ -52,7 +53,7 @@ export function VariantDial() {
           </p>
           <div className="text-left">
             <p className="text-lg text-muted-foreground">/month</p>
-            <p className="mt-0.5 inline-flex rounded-full border border-foreground/[0.08] bg-card px-3 py-0.5 text-sm font-semibold text-foreground">
+            <p className="mt-0.5 inline-flex rounded-full border border-black/[0.08] bg-card px-3 py-0.5 text-sm font-semibold text-foreground">
               {rec.custom ? "Talk to us" : `${best.plan.name} plan`}
             </p>
           </div>
@@ -74,11 +75,11 @@ export function VariantDial() {
           </div>
           <div className="relative mt-4">
             <div className="relative flex h-8 items-center">
-              <div className="h-2.5 w-full rounded-full" style={{ background: SPECTRUM }} />
+              <div className="h-2.5 w-full rounded-full" style={{ backgroundImage: SPECTRUM }} />
               {/* veil over the not-yet-reached side */}
               <div
                 aria-hidden
-                className="absolute inset-y-[10px] right-0 rounded-r-full bg-card/75"
+                className="absolute inset-y-[10px] right-0 rounded-r-full bg-white/75"
                 style={{ width: `${(1 - opsT) * 100}%` }}
               />
               {/* plan boundaries */}
@@ -98,7 +99,7 @@ export function VariantDial() {
               ))}
               <div
                 aria-hidden
-                className="absolute top-1/2 size-6 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-foreground bg-card shadow-[0_2px_8px_rgba(21,21,21,0.35)]"
+                className="absolute top-1/2 size-6 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-foreground bg-white shadow-[0_2px_8px_rgba(21,21,21,0.35)]"
                 style={{ left: `${opsT * 100}%` }}
               />
               <input
@@ -135,7 +136,7 @@ export function VariantDial() {
               key={p.id}
               type="button"
               onClick={() => setPreset(p.ops, p.gb)}
-              className="rounded-full border border-foreground/[0.08] bg-card px-4 py-1.5 text-sm font-semibold text-foreground transition-colors hover:bg-card"
+              className="rounded-full border border-black/[0.08] bg-white px-4 py-1.5 text-sm font-semibold text-foreground transition-colors hover:bg-card"
             >
               {p.label}
               <span className="ml-2 font-mono text-xs font-normal text-muted-foreground">

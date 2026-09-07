@@ -1,4 +1,3 @@
-import "@prisma-docs/ui/search.css";
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import type React from "react";
@@ -108,15 +107,10 @@ export default function RootLayout({
       </head>
       <body className="antialiased">
         <ThemeProvider>
-          <a href="#main-content" className="skip-link">
-            Skip to content
-          </a>
           <UtmPersistence />
           <BuildersDayBanner />
           <Header />
-          <main id="main-content" tabIndex={-1} className="min-h-screen outline-none">
-            {children}
-          </main>
+          <main className="min-h-screen">{children}</main>
           <Footer />
         </ThemeProvider>
       </body>

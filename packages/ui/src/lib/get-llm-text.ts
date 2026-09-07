@@ -1,8 +1,7 @@
-/** Accept the page structurally so this shared package does not import an app's source. */
-export async function getLLMText(page: {
-  url: string;
-  data: { title: string; getText: (format: "processed") => Promise<string> };
-}) {
+import { source } from "@/lib/source";
+import type { InferPageType } from "fumadocs-core/source";
+
+export async function getLLMText(page: InferPageType<typeof source>) {
   const processed = await page.data.getText("processed");
 
   return `# ${page.data.title} (${page.url})

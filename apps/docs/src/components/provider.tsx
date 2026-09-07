@@ -4,6 +4,8 @@ import { NextProvider } from "fumadocs-core/framework/next";
 import { KapaProvider } from "@kapaai/react-sdk";
 import CustomSearchDialog from "@/components/search";
 import type { ReactNode } from "react";
+import { source } from "@/lib/source";
+import { TreeContextProvider } from "fumadocs-ui/contexts/tree";
 import { TrackingProvider } from "@/components/tracking-provider";
 import { UtmPersistence } from "@/components/utm-persistence";
 
@@ -23,7 +25,6 @@ export function Provider({ children }: { children: ReactNode }) {
         }}
       >
         <RootProvider
-          theme={{ defaultTheme: "system", enableSystem: true, disableTransitionOnChange: true }}
           search={{
             SearchDialog: CustomSearchDialog,
           }}

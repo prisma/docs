@@ -25,11 +25,7 @@ export function BuildersDayBanner() {
   const [open, setOpen] = useState(true);
 
   useEffect(() => {
-    try {
-      if (localStorage.getItem(DISMISS_KEY) === "true") setOpen(false);
-    } catch {
-      /* Storage may be unavailable in private browsing. */
-    }
+    if (localStorage.getItem(DISMISS_KEY) === "true") setOpen(false);
   }, []);
 
   if (!open) return null;
@@ -39,7 +35,7 @@ export function BuildersDayBanner() {
       <style>{`.${DISMISS_CLASS} .builders-day-banner-wrap { display: none; }`}</style>
       <script
         dangerouslySetInnerHTML={{
-          __html: `try { if (localStorage.getItem('${DISMISS_KEY}') === 'true') document.documentElement.classList.add('${DISMISS_CLASS}'); } catch {}`,
+          __html: `if (localStorage.getItem('${DISMISS_KEY}') === 'true') document.documentElement.classList.add('${DISMISS_CLASS}');`,
         }}
       />
       <a
@@ -56,7 +52,7 @@ export function BuildersDayBanner() {
         }
         className="builders-day-banner relative flex items-center justify-center py-2.5 pl-4 pr-10 text-xs outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-white sm:text-sm"
       >
-        <span className="builders-day-banner-content flex items-center justify-center gap-2.5 max-sm:flex-wrap">
+        <span className="builders-day-banner-content flex items-center justify-center gap-2.5">
           <span className="font-semibold whitespace-nowrap">Builder&apos;s Day</span>
           <span className="hidden text-white/70 md:inline">
             Prisma&apos;s AI developer conference · October 26 · San Francisco
@@ -85,13 +81,9 @@ export function BuildersDayBanner() {
         aria-label="Dismiss banner"
         onClick={() => {
           setOpen(false);
-          try {
-            localStorage.setItem(DISMISS_KEY, "true");
-          } catch {
-            /* Dismiss still works without storage. */
-          }
+          localStorage.setItem(DISMISS_KEY, "true");
         }}
-        className="absolute top-1/2 right-2 z-[2] -translate-y-1/2 cursor-pointer flex size-9 items-center justify-center rounded-md text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+        className="absolute top-1/2 right-2 z-[2] -translate-y-1/2 cursor-pointer rounded-md p-1.5 text-white/60 transition-colors hover:bg-white/10 hover:text-white"
       >
         <svg
           width="16"
