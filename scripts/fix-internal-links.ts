@@ -11,9 +11,12 @@
  * Resolution is done against production (https://www.prisma.io) with a real
  * request that follows redirects, because the redirect tables live in five
  * different files across three apps plus Vercel config and only the live site
- * knows the composition. Results are cached on disk so re-runs are cheap. With
- * no network the script falls back to resolving against the repo's own redirect
- * tables (`--offline`, or automatically after the first connection failure).
+ * knows the composition. Every hop of the live chain is then checked against
+ * the repo's own tables, so a redirect this branch adds or retargets wins over
+ * what production still serves (see `reconcileWithRepoRedirects`). Results are
+ * cached on disk so re-runs are cheap. With no network the script falls back to
+ * resolving against the repo's own redirect tables (`--offline`, or
+ * automatically after the first connection failure).
  *
  * ── Zones ──────────────────────────────────────────────────────────────────
  * A root-relative href does NOT mean the same thing in both content trees,
@@ -211,20 +214,24 @@ interface Resolution {
   status: number;
   /** Set when the answer came from the repo's redirect tables, not the network. */
   offline?: boolean;
-  /** Set when a live 404 was recovered through a redirect this branch adds. */
+  /** Set when the answer was corrected through a redirect this branch adds or retargets. */
   viaRepoRedirect?: string;
+  /** Every URL the live chain passed through before `finalUrl`, in order. */
+  hops?: string[];
   /** Why the request failed, for `status: 0`. */
   error?: string;
 }
 
 type Cache = Record<string, Resolution>;
+const CACHE_VERSION = 3;
 
 async function loadCache(): Promise<Cache> {
   if (!existsSync(CACHE_PATH)) return {};
   try {
     const cached = JSON.parse(await readFile(CACHE_PATH, "utf8"));
-    // Older resolutions discarded Location fragments; they cannot be reused.
-    return cached.version === 2 ? (cached.resolutions as Cache) : {};
+    // Older resolutions discarded Location fragments (v1) or the hop list that
+    // reconciliation needs (v2); they cannot be reused.
+    return cached.version === CACHE_VERSION ? (cached.resolutions as Cache) : {};
   } catch {
     return {};
   }
@@ -232,7 +239,10 @@ async function loadCache(): Promise<Cache> {
 
 async function saveCache(cache: Cache): Promise<void> {
   await mkdir(path.dirname(CACHE_PATH), { recursive: true });
-  await writeFile(CACHE_PATH, `${JSON.stringify({ version: 2, resolutions: cache }, null, 2)}\n`);
+  await writeFile(
+    CACHE_PATH,
+    `${JSON.stringify({ version: CACHE_VERSION, resolutions: cache }, null, 2)}\n`,
+  );
 }
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -254,6 +264,7 @@ export function resolvedWithFragment(finalUrl: string, original: URL): URL {
 export async function fetchFollowing(url: string): Promise<Resolution> {
   for (const method of ["HEAD", "GET"] as const) {
     let current = new URL(url);
+    const hops: string[] = [];
     for (let hop = 0; hop <= 20; hop++) {
       const response = await fetch(current, {
         method,
@@ -265,13 +276,14 @@ export async function fetchFollowing(url: string): Promise<Resolution> {
       const location = response.headers.get("location");
       if ([301, 302, 303, 307, 308].includes(response.status) && location !== null) {
         if (hop === 20) throw new Error(`Too many redirects: ${url}`);
+        hops.push(current.href);
         current = redirectTarget(current, location);
         continue;
       }
       // Some hosts answer HEAD with 403/405 but serve GET fine.
       if (method === "HEAD" && (response.status === 403 || response.status === 405)) break;
       // response.url omits fragments, so retain the URL built from Location.
-      return { finalUrl: current.href, status: response.status };
+      return { finalUrl: current.href, status: response.status, hops };
     }
   }
   throw new Error("unreachable");
@@ -444,6 +456,60 @@ export function resolveOffline(url: string, rules: Rule[]): Resolution {
   }
 
   return { finalUrl: current.toString(), status: 508, offline: true };
+}
+
+/** The comparable form of a URL: no trailing slash, fragment kept. */
+function comparable(url: string): string {
+  const out = new URL(url);
+  if (out.pathname.length > 1 && out.pathname.endsWith("/")) {
+    out.pathname = out.pathname.replace(/\/+$/, "");
+  }
+  return out.href;
+}
+
+/**
+ * Production has not deployed the redirect tables on this branch yet, so a
+ * chain measured live can disagree with the repo in two ways:
+ *
+ *   - a URL this branch adds a redirect for still answers 404 upstream;
+ *   - a hop this branch *retargets* still goes where `main` sends it. The
+ *     retired Data Guide URLs are the case in point: `/dataguide/...` 307s (from
+ *     outside this repo) onto a docs rule that used to land on the Next.js
+ *     troubleshooting page, which this branch points at the right reference.
+ *
+ * So every URL that production itself redirected (or answered with an error) is
+ * re-run through the repo's own tables. Where they send one of them somewhere
+ * else, that answer wins — once `verify` has confirmed upstream that it is a
+ * 200. A URL production serves as a page is never re-routed, whatever the
+ * tables say about it: the offline matcher is only a model of production (it
+ * is case-insensitive, and it cannot see ordering across zones), and a live
+ * 200 is the ground truth the model must not override.
+ */
+export async function reconcileWithRepoRedirects(
+  target: string,
+  resolution: Resolution,
+  rules: Rule[],
+  verify: (url: string) => Promise<Resolution>,
+): Promise<Resolution> {
+  const visited = [...(resolution.hops ?? [])];
+  if (resolution.status !== 200) visited.push(resolution.finalUrl);
+  if (visited.length === 0) return resolution;
+  const liveFinal = comparable(resolution.finalUrl);
+
+  for (const url of visited) {
+    const local = resolveOffline(url, rules);
+    if (local.status !== 200) continue; // a loop in the tables; the test suite reports those
+    const localFinal = comparable(local.finalUrl);
+    if (localFinal === comparable(url)) continue; // no repo rule applies here
+    if (resolution.status === 200 && localFinal === liveFinal) continue; // already agrees
+
+    const verified = await verify(local.finalUrl);
+    if (verified.status !== 200) continue;
+    if (resolution.status === 200 && comparable(verified.finalUrl) === liveFinal) continue;
+    return { ...verified, viaRepoRedirect: local.finalUrl };
+  }
+
+  return resolution;
 }
 
 // ───────────────────────────────────────────────────────────────── extraction ──
@@ -647,30 +713,21 @@ async function main(): Promise<void> {
     }
   }
 
-  /**
-   * Production has not yet deployed the redirects this branch adds, so a URL
-   * this PR is fixing still answers 404 upstream. Re-resolve those through the
-   * repo's own redirect tables and re-verify the result against production.
-   */
-  async function recoverVia404Redirects(
-    target: string,
-    resolution: Resolution,
-  ): Promise<Resolution> {
-    if (resolution.status !== 404 || offline) return resolution;
-
-    offlineRules ??= await loadOfflineRules();
-    const local = resolveOffline(target, offlineRules);
-    if (local.finalUrl === target) return resolution;
-
-    const verified = await resolveTarget(local.finalUrl);
-    if (verified.status !== 200) return resolution;
-    return { ...verified, viaRepoRedirect: local.finalUrl };
-  }
-
   const queue = [...uncached];
   const workers = Array.from({ length: 4 }, async () => {
     for (let target = queue.pop(); target; target = queue.pop()) {
-      cache[target] = await recoverVia404Redirects(target, await resolveTarget(target));
+      const resolution = await resolveTarget(target);
+      if (offline) {
+        cache[target] = resolution;
+      } else {
+        offlineRules ??= await loadOfflineRules();
+        cache[target] = await reconcileWithRepoRedirects(
+          target,
+          resolution,
+          offlineRules,
+          resolveTarget,
+        );
+      }
       done++;
       if (done % 25 === 0) process.stderr.write(`  ${done}/${uncached.length}\n`);
     }

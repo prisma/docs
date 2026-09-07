@@ -8,6 +8,7 @@ import {
   compileSource,
   findHrefs,
   fetchFollowing,
+  reconcileWithRepoRedirects,
   resolvedWithFragment,
   resolveOffline,
   isOutOfScopeHref,
@@ -244,6 +245,7 @@ test("online redirects preserve fragments through multiple hops and HEAD fallbac
     assert.deepEqual(await fetchFollowing(`${origin}/old`), {
       finalUrl: `${origin}/new#named-constraints-and-indexes`,
       status: 200,
+      hops: [`${origin}/old`, `${origin}/middle#named-constraints-and-indexes`],
     });
     assert.equal(
       (await fetchFollowing(`${origin}/get-only`)).finalUrl,
@@ -288,5 +290,114 @@ test("offline redirects and final replacements honor Location fragment precedenc
       source,
       /\[Named Constraints upgrade guide\]\(https:\/\/www\.prisma\.io\/docs\/guides\/upgrade-prisma-orm\/v3#named-constraints-and-indexes\)/,
     );
+  }
+});
+
+test("a hop that this branch retargets wins over where production still sends it", async () => {
+  const origin = "https://www.prisma.io";
+  const retired =
+    "/docs/orm/more/help-and-troubleshooting/dataguide/setting-up-a-local-postgresql-database";
+  const rules = [
+    { source: retired, destination: "/docs/local-development/postgres", prefix: "" },
+    { source: "/gone", destination: "/there", prefix: "" },
+  ];
+  const verify = async (url: string) => ({
+    finalUrl: url,
+    status: url.endsWith("/dead") ? 404 : 200,
+  });
+
+  // Production has not deployed the retarget: the live chain still lands on the
+  // old destination via a hop that only exists outside this repo.
+  const live = {
+    finalUrl: `${origin}/docs/orm/v7/more/troubleshooting/nextjs`,
+    status: 200,
+    hops: [
+      `${origin}/dataguide/postgresql/setting-up-a-local-postgresql-database`,
+      `${origin}${retired}`,
+    ],
+  };
+  assert.deepEqual(await reconcileWithRepoRedirects(live.hops[0], live, rules, verify), {
+    finalUrl: `${origin}/docs/local-development/postgres`,
+    status: 200,
+    viaRepoRedirect: `${origin}/docs/local-development/postgres`,
+  });
+
+  // A URL this branch adds a redirect for still answers 404 upstream.
+  assert.deepEqual(
+    await reconcileWithRepoRedirects(
+      `${origin}/gone`,
+      { finalUrl: `${origin}/gone`, status: 404, hops: [] },
+      rules,
+      verify,
+    ),
+    { finalUrl: `${origin}/there`, status: 200, viaRepoRedirect: `${origin}/there` },
+  );
+
+  // Nothing in the tables applies: production's answer stands, untouched.
+  const untouched = { finalUrl: `${origin}/fine`, status: 200, hops: [`${origin}/old-fine`] };
+  assert.equal(
+    await reconcileWithRepoRedirects(
+      live.hops[0].replace(/\/dataguide.*/, "/old-fine"),
+      untouched,
+      rules,
+      verify,
+    ),
+    untouched,
+  );
+
+  // The tables agree with production: nothing is recorded as a correction.
+  const agreeing = {
+    finalUrl: `${origin}/docs/local-development/postgres`,
+    status: 200,
+    hops: [`${origin}${retired}`],
+  };
+  assert.equal(
+    await reconcileWithRepoRedirects(agreeing.hops[0], agreeing, rules, verify),
+    agreeing,
+  );
+
+  // A page production serves is never re-routed, even though the tables have a
+  // rule that the (case-insensitive) offline matcher would apply to it.
+  const served = {
+    finalUrl: `${origin}/blog/fullstack-remix-prisma-mongodb-1-7d0bftxbmb6r`,
+    status: 200,
+    hops: [],
+  };
+  const caseRules = [
+    {
+      source: "/blog/fullstack-remix-prisma-mongodb-1-7D0BfTXBmB6r",
+      destination: "/docs/guides/frameworks/react-router-7",
+      prefix: "",
+    },
+  ];
+  assert.equal(
+    await reconcileWithRepoRedirects(served.finalUrl, served, caseRules, verify),
+    served,
+  );
+
+  // A repo destination that does not answer 200 upstream is never written.
+  const dead = { finalUrl: `${origin}/gone`, status: 404, hops: [] };
+  const deadRules = [{ source: "/gone", destination: "/dead", prefix: "" }];
+  assert.equal(await reconcileWithRepoRedirects(`${origin}/gone`, dead, deadRules, verify), dead);
+});
+
+test("the retired Data Guide links land where this branch's redirects send them", () => {
+  const local = /\[locally\]\(https:\/\/www\.prisma\.io\/docs\/local-development\/postgres\)/;
+  const expectations: Array<[post: string, pattern: RegExp]> = [
+    ["fullstack-nextjs-graphql-prisma-2-fwpc6ds155", local],
+    ["fullstack-nextjs-graphql-prisma-3-clxbrcqppv", local],
+    ["fullstack-nextjs-graphql-prisma-4-1k1kc83x3v", local],
+    ["fullstack-nextjs-graphql-prisma-oklidw1rhw", local],
+    [
+      "wnip-q1-dsk0golh8v",
+      /\[Introduction to PostgreSQL connection URIs\]\(https:\/\/www\.prisma\.io\/docs\/orm\/v7\/reference\/connection-urls\)/,
+    ],
+  ];
+  for (const [post, pattern] of expectations) {
+    const source = readFileSync(
+      new URL(`../apps/blog/content/blog/${post}/index.mdx`, import.meta.url),
+      "utf8",
+    );
+    assert.match(source, pattern, post);
   }
 });
