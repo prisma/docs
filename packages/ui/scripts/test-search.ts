@@ -34,4 +34,4 @@ assert.equal(
   (await GET(new Request("http://localhost/api/search?query=test&tag=bad"))).status,
   400,
 );
-console.log("Orama results, typo tolerance, filters, deduplication, and cross-app URLs passed.");
+console.log("Search results, typo tolerance, filters, deduplication, and cross-app URLs passed.");

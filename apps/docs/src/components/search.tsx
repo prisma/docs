@@ -7,12 +7,5 @@ function trackSearch(query: string) {
   posthog.capture("docs:search", { query });
 }
 export default function CustomSearchDialog(props: SharedProps) {
-  return (
-    <UnifiedSearchDialog
-      open={props.open}
-      onOpenChange={props.onOpenChange}
-      api="/docs/api/search"
-      onStableQuery={trackSearch}
-    />
-  );
+  return <UnifiedSearchDialog {...props} api="/docs/api/search" onStableQuery={trackSearch} />;
 }
