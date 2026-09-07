@@ -1,5 +1,5 @@
 "use client";
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Search } from "lucide-react";
 import { RootProvider } from "fumadocs-ui/provider/next";
 import { useSearchContext } from "fumadocs-ui/contexts/search";
@@ -52,13 +52,34 @@ export function UnifiedSearchDialog({
   open,
   onOpenChange,
   api = "/api/search",
+  onStableQuery,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   api?: string;
+  onStableQuery?: (query: string) => void;
 }) {
   const [tag, setTag] = useState<string | undefined>("all");
   const { search, setSearch, query } = useDocsSearch({ type: "fetch", api, tag, delayMs: 180 });
+  const lastCapturedQuery = useRef<string | null>(null);
+  useEffect(() => {
+    if (
+      !onStableQuery ||
+      !open ||
+      !search.trim() ||
+      query.isLoading ||
+      query.data === undefined ||
+      query.data === "empty"
+    )
+      return;
+    const timer = setTimeout(() => {
+      if (lastCapturedQuery.current !== search) {
+        lastCapturedQuery.current = search;
+        onStableQuery(search);
+      }
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [onStableQuery, open, search, query.isLoading, query.data]);
   return (
     <FrameworkProvider useRouter={useSearchRouter} usePathname={usePathname} useParams={useParams}>
       <SearchDialog
