@@ -101,21 +101,30 @@ async function main() {
         }
       >();
 
-      for (const entries of Object.values(this.generatedEntries)) {
-        for (const entry of entries) {
-          if (entry.type !== "operation") continue;
-          operationByFilePath.set(entry.path, {
-            path: entry.item.path,
-            method: entry.item.method.toUpperCase(),
-            title: entry.info.title,
-            description: entry.info.description,
-          });
+      // Fumadocs 11 nests operations inside tag groups.
+      const entries = Object.values(this.generatedEntries).flat();
+      for (const entry of entries) {
+        if (entry.type === "group") {
+          entries.push(...entry.entries);
+          continue;
         }
+        if (entry.type !== "operation") continue;
+        operationByFilePath.set(entry.path, {
+          path: entry.item.path,
+          method: entry.item.method.toUpperCase(),
+          title: entry.info.title,
+          description: entry.info.description,
+        });
       }
 
       for (const file of files) {
         const operation = operationByFilePath.get(file.path);
-        if (!operation) continue;
+        if (!operation) {
+          if (file.path.endsWith(".mdx")) {
+            throw new Error(`Missing operation metadata for generated page: ${file.path}`);
+          }
+          continue;
+        }
 
         const parsed = matter(file.content);
         const data = parsed.data as Record<string, unknown>;
