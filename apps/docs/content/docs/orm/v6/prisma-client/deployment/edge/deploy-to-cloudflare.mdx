@@ -51,33 +51,37 @@ This section covers _general_ things you need to be aware of when deploying to C
 
 ### Using Prisma Postgres
 
-You can use Prisma Postgres and deploy to Cloudflare Workers.
+Use the [Prisma Postgres serverless driver](/postgres/database/serverless-driver) to connect from a Cloudflare Worker over HTTP and WebSockets. This path requires Prisma ORM 6.19 or later.
 
-After you create a Worker, run:
+Configure an engine-less Prisma Client:
 
-```npm
-npx prisma@latest init --db
+```prisma title="prisma/schema.prisma"
+generator client {
+  provider   = "prisma-client"
+  output     = "../generated/client"
+  engineType = "client"
+  runtime    = "workerd"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
 ```
 
-Enter a name for your project and choose a database region.
+Install the Prisma Postgres adapter and driver:
 
-This command:
-
-- Connects your CLI to your [Prisma Data Platform](https://console.prisma.io) account. If you're not logged in or don't have an account, your browser will open to guide you through creating a new account or signing into your existing one.
-- Creates a `prisma` directory containing a `schema.prisma` file for your database models.
-- Creates a `.env` file with your `DATABASE_URL` (e.g., for Prisma Postgres it should have something similar to `DATABASE_URL="prisma+postgres://accelerate.prisma-data.net/?api_key=eyJhbGciOiJIUzI..."`).
-
-You'll need to install the Client extension required to use Prisma Postgres:
-
-```npm
-npm i @prisma/extension-accelerate
+```npm title="Terminal"
+npm install @prisma/adapter-ppg @prisma/ppg
 ```
 
-And extend `PrismaClient` with the extension in your application code:
+In the [Prisma Console](https://console.prisma.io), select your database, choose **Connect to your database**, generate a connection string, and store the direct value in the Worker's `DATABASE_URL` secret. The serverless driver accepts the direct connection-string format as a credential but communicates over HTTP and WebSockets rather than TCP.
 
-```typescript
+Instantiate Prisma Client with `PrismaPostgresAdapter`:
+
+```typescript title="src/index.ts"
+import { PrismaPostgresAdapter } from "@prisma/adapter-ppg";
 import { PrismaClient } from "./generated/client";
-import { withAccelerate } from "@prisma/extension-accelerate";
 
 export interface Env {
   DATABASE_URL: string;
@@ -85,9 +89,10 @@ export interface Env {
 
 export default {
   async fetch(request, env, ctx) {
-    const prisma = new PrismaClient({
-      datasourceUrl: env.DATABASE_URL,
-    }).$extends(withAccelerate());
+    const adapter = new PrismaPostgresAdapter({
+      connectionString: env.DATABASE_URL,
+    });
+    const prisma = new PrismaClient({ adapter });
 
     const users = await prisma.user.findMany();
     const result = JSON.stringify(users);
@@ -96,7 +101,7 @@ export default {
 } satisfies ExportedHandler<Env>;
 ```
 
-Then setup helper scripts to perform migrations and generate `PrismaClient` as [shown in this section](/orm/v6/prisma-client/deployment/edge/deploy-to-cloudflare#development).
+Generate Prisma Client and configure the development and production secrets as [shown in this section](/orm/v6/prisma-client/deployment/edge/deploy-to-cloudflare#development). Keep database credentials in Worker secrets and never include them in browser-delivered code.
 
 :::note
 
@@ -120,7 +125,7 @@ There's [also work being done](https://github.com/sidorares/node-mysql2/pull/228
 
 :::note
 
-If your application uses PostgreSQL, we recommend using [Prisma Postgres](/postgres). It is fully supported on edge runtimes and does not require a specialized edge-compatible driver. For other databases, [Prisma Accelerate](/accelerate) extends edge compatibility so you can connect to _any_ database from _any_ edge function provider.
+If your application uses Prisma Postgres, use the [Prisma Postgres serverless driver](/postgres/database/serverless-driver). For another database, choose a driver that supports your edge runtime and use its Prisma driver adapter.
 
 :::
 
@@ -202,7 +207,7 @@ This command requires you to be authenticated, and will ask you to log in to you
 
 ### Size limits on free accounts
 
-Cloudflare has a [size limit of 3 MB for Workers on the free plan](https://developers.cloudflare.com/workers/platform/limits/). If your application bundle with Prisma ORM exceeds that size, we recommend upgrading to a paid Worker plan or using Prisma Accelerate to deploy your application.
+Cloudflare has a [size limit of 3 MB for Workers on the free plan](https://developers.cloudflare.com/workers/platform/limits/). If your application bundle with Prisma ORM exceeds that size, use an engine-less Prisma Client with a compatible driver adapter or upgrade to a plan with a larger limit.
 
 ### Deploying a Next.js app to Cloudflare Pages with `@cloudflare/next-on-pages`
 
