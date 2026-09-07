@@ -17,7 +17,7 @@ The Prisma Postgres serverless driver connects to hosted Prisma Postgres databas
 
 Use the serverless driver when a conventional PostgreSQL TCP driver cannot run. It also supports streaming, pipelined queries, transactions, batch operations, SQL template literals, and custom type handling.
 
-If your application currently uses a hosted `prisma+postgres://` Accelerate connection, follow [Switch Prisma Postgres from Accelerate](/postgres/database/switch-from-accelerate).
+If your application currently uses a hosted `prisma+postgres://` Accelerate connection, follow [Connect to Prisma Postgres without Accelerate](/postgres/database/switch-from-accelerate).
 
 ## Get your connection string
 
@@ -72,7 +72,7 @@ generator client {
 Generate the client, then instantiate it with the serverless driver adapter:
 
 ```ts title="src/lib/prisma.ts"
-import { PrismaClient } from "../generated/prisma/client";
+import { PrismaClient } from "../../generated/prisma/client";
 import { PrismaPostgresAdapter } from "@prisma/adapter-ppg";
 
 const prisma = new PrismaClient({
@@ -231,7 +231,7 @@ import { client, defaultClientConfig } from "@prisma/ppg";
 import type { ValueParser } from "@prisma/ppg";
 
 // Custom parser for UUID type
-const uuidParser: ValueParser<string> = {
+const uuidParser: ValueParser<string | null> = {
   oid: 2950,
   parse: (value) => (value ? value.toUpperCase() : null),
 };
@@ -239,13 +239,14 @@ const uuidParser: ValueParser<string> = {
 const config = defaultClientConfig(process.env.DATABASE_URL!);
 const cl = client({
   ...config,
-  parsers: [...config.parsers, uuidParser], // Append to defaults
+  parsers: [...(config.parsers ?? []), uuidParser], // Append to defaults
 });
 ```
 
 For custom serializers, place them before defaults so they take precedence:
 
 ```ts title="src/lib/custom-serializer.ts"
+import { client, defaultClientConfig } from "@prisma/ppg";
 import type { ValueSerializer } from "@prisma/ppg";
 
 class Point {
@@ -263,7 +264,7 @@ const pointSerializer: ValueSerializer<Point> = {
 const config = defaultClientConfig(process.env.DATABASE_URL!);
 const cl = client({
   ...config,
-  serializers: [pointSerializer, ...config.serializers], // Your serializer first
+  serializers: [pointSerializer, ...(config.serializers ?? [])], // Your serializer first
 });
 
 await cl.query("INSERT INTO locations (point) VALUES ($1)", new Point(10, 20));
