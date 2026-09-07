@@ -78,10 +78,9 @@ async function main() {
     includeDescription: true,
     per: "operation",
     groupBy: "tag",
-    name(output, document) {
+    name(output) {
       if (output.type === "operation") {
-        // @ts-ignore
-        const operation = document.paths![output.item.path]![output.item.method]!;
+        const operation = this.fromExtractedOperation(output.item)!.operation;
         const operationId = operation.operationId || "";
         const cleanName = operationId
           .replace(/V\d+/g, "")

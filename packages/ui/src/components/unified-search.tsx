@@ -7,6 +7,7 @@ import { FrameworkProvider } from "fumadocs-core/framework";
 import { usePathname, useParams } from "next/navigation";
 import { useDocsSearch } from "fumadocs-core/search/client";
 import {
+  type SharedProps,
   SearchDialog,
   SearchDialogOverlay,
   SearchDialogContent,
@@ -51,11 +52,10 @@ function useSearchRouter() {
 export function UnifiedSearchDialog({
   open,
   onOpenChange,
+  dialogHandle,
   api = "/api/search",
   onStableQuery,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+}: SharedProps & {
   api?: string;
   onStableQuery?: (query: string) => void;
 }) {
@@ -83,6 +83,7 @@ export function UnifiedSearchDialog({
   return (
     <FrameworkProvider useRouter={useSearchRouter} usePathname={usePathname} useParams={useParams}>
       <SearchDialog
+        dialogHandle={dialogHandle}
         open={open}
         onOpenChange={onOpenChange}
         search={search}
