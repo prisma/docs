@@ -17,7 +17,10 @@ export async function searchPages(query: string, source = "all") {
             description: page.description,
             content: page.keywords,
             url: page.url,
-            breadcrumbs: [labels[page.source as keyof typeof labels], ...page.url.split("/").filter(Boolean).slice(1, -1)],
+            breadcrumbs: [
+              labels[page.source as keyof typeof labels],
+              ...page.url.split("/").filter(Boolean).slice(1, -1),
+            ].filter((label): label is string => typeof label === "string"),
           })),
         search: { limit: 30, tolerance: 1, boost: { title: 5 } },
       }),
