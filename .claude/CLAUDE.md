@@ -25,11 +25,17 @@ pnpm install           # Install all dependencies
 pnpm dev               # Start all apps in dev mode
 pnpm build             # Build all packages and apps
 pnpm check             # Format (oxfmt) and lint (oxlint) with auto-fix
-pnpm types:check       # Type check all packages
+pnpm types:check       # Type check all packages (builds workspace deps, e.g. @prisma/eclipse, first)
 pnpm lint:links        # Validate internal links in docs (runs in apps/docs)
 ```
 
 Pre-commit hook runs `pnpm check` via lefthook.
+
+`pnpm types:check` runs on a fresh clone with no env vars set. It builds workspace
+dependencies that ship compiled types (`@prisma/eclipse` publishes from `dist`) before
+type checking, and `apps/site/next.config.mjs` skips its production origin guard for
+`next typegen` only — a `next build` or `next start` without `NEXT_DOCS_ORIGIN` and
+`NEXT_BLOG_ORIGIN` still fails. See `apps/site/scripts/require-origins.mjs`.
 
 ## Packages
 
