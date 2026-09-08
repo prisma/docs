@@ -38,17 +38,20 @@ four side by side.
 
 **Packages:**
 
-- **`@prisma-docs/ui`** (packages/ui) - Shared shadcn-style components, navigation, and helpers.
-  Private to the workspace; see the section below.
+- **`@prisma-docs/ui`** (packages/ui) - Shared shadcn-style components, hooks, footer data, and
+  helpers (analytics, newsletter, RSS, UTM, unified search). Private to the workspace; see the
+  section below. Site navigation is not here: each app ships its own header and nav.
 - **`@prisma/eclipse`** (packages/eclipse) - Prisma's design system: components, styles, tokens,
   and fonts. It is published to npm, and its `build` script runs `tsdown` and then copies the CSS
   and fonts into `dist/`.
 
 **The structural difference to know:** `packages/ui` has no build script and its `exports` point
-straight at `src/`, so apps consume it as source. `packages/eclipse` is the opposite - every
-export resolves into `dist/`, so it must be built before anything that imports it. Turbo's
-`build` and `dev` tasks both declare `dependsOn: ["^build"]`, which is what makes `pnpm build`
-and `pnpm dev` build it first; all four apps also list `@prisma/eclipse` in `transpilePackages`.
+straight at `src/`, so apps consume it as source. `packages/eclipse` is the opposite - its code,
+style, and font exports all resolve into `dist/`, so it must be built before anything that imports
+it. (Both packages also export a `./postcss.config` from the package root, which needs no build.)
+Turbo's `build` and `dev` tasks both declare `dependsOn: ["^build"]`, which is what makes
+`pnpm build` and `pnpm dev` build it first; all four apps also list `@prisma/eclipse` in
+`transpilePackages`.
 
 ## Commands
 
