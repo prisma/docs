@@ -1,4 +1,5 @@
 import { createMDX } from "fumadocs-mdx/next";
+import { assertOriginsConfigured } from "./scripts/require-origins.mjs";
 
 const withMDX = createMDX();
 
@@ -28,19 +29,10 @@ const imageRemoteHostnames = [
   BLOG_ORIGIN_HOST,
 ];
 
-if (
-  process.env.NODE_ENV === "production" &&
-  (!process.env.NEXT_DOCS_ORIGIN || !process.env.NEXT_BLOG_ORIGIN)
-) {
-  throw new Error(
-    [
-      !process.env.NEXT_DOCS_ORIGIN && "DOCS_ORIGIN is required in production",
-      !process.env.NEXT_BLOG_ORIGIN && "BLOG_ORIGIN is required in production",
-    ]
-      .filter(Boolean)
-      .join("; "),
-  );
-}
+// Throws when a production build or a production server is missing an origin.
+// `next typegen` (run by `pnpm types:check`) is exempt: it loads this config in
+// production mode but neither builds nor serves. See ./scripts/require-origins.mjs.
+assertOriginsConfigured();
 
 const ContentSecurityPolicy = `
   default-src 'self';
