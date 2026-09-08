@@ -29,7 +29,10 @@ const startArgv = ["/usr/bin/node", "/repo/apps/site/node_modules/next/dist/bin/
 
 test("nextCommandFromArgv reads the subcommand, skipping flags", () => {
   assert.equal(nextCommandFromArgv(buildArgv), "build");
-  assert.equal(nextCommandFromArgv([...typegenArgv.slice(0, 2), "--turbopack", "typegen"]), "typegen");
+  assert.equal(
+    nextCommandFromArgv([...typegenArgv.slice(0, 2), "--turbopack", "typegen"]),
+    "typegen",
+  );
   assert.equal(nextCommandFromArgv(buildArgv.slice(0, 2)), undefined);
 });
 
@@ -39,7 +42,13 @@ test("only typegen counts as a type-only run", () => {
   assert.equal(isTypeOnlyRun(startArgv), false);
   // A build's jest-worker children re-load the config with an argv that has no
   // Next.js subcommand at all; they must not be treated as typegen.
-  assert.equal(isTypeOnlyRun(["/usr/bin/node", "/repo/node_modules/next/dist/compiled/jest-worker/threadChild.js"]), false);
+  assert.equal(
+    isTypeOnlyRun([
+      "/usr/bin/node",
+      "/repo/node_modules/next/dist/compiled/jest-worker/threadChild.js",
+    ]),
+    false,
+  );
 });
 
 test("missingOriginMessages names each unset origin", () => {
