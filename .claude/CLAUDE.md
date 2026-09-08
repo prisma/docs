@@ -4,17 +4,51 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Monorepo Structure
 
-This is a **Turborepo** monorepo with pnpm workspaces:
+This is a **Turborepo** monorepo with pnpm workspaces (`apps/*` and `packages/*`):
 
 ```
 ├── apps/
-│   └── docs/                 # Prisma documentation site (Next.js 16 + Fumadocs)
+│   ├── site/                 # Prisma marketing site and multi-zone host (port 3000)
+│   ├── docs/                 # Prisma documentation site (Next.js 16 + Fumadocs, port 3001)
+│   ├── blog/                 # Prisma blog (Next.js + Fumadocs, port 3002)
+│   └── eclipse/              # Eclipse design system showcase (Next.js + Fumadocs, port 3003)
 ├── packages/
-│   └── ui/                   # Shared UI components (@prisma-docs/ui)
+│   ├── ui/                   # Shared UI components (@prisma-docs/ui, no build step)
+│   └── eclipse/              # Eclipse design system (@prisma/eclipse, published, builds to dist/)
 ├── turbo.json
 ├── pnpm-workspace.yaml
 └── package.json
 ```
+
+**Apps** - each pins its own dev port in its `dev` script, so `pnpm dev` at the root starts all
+four side by side.
+
+- **`site`** (apps/site, port 3000) - The prisma.io marketing site and the root zone of the
+  multi-zone setup. It has no `basePath`, serves its assets from `/site-static`, and owns the
+  `rewrites()` that forward `/docs/*` and `/blog/*` to the docs and blog zones
+  (`NEXT_DOCS_ORIGIN` / `NEXT_BLOG_ORIGIN`).
+- **`docs`** (apps/docs, port 3001) - The documentation site, served under `basePath: "/docs"`
+  with assets at `/docs-static`. See the `docs` section below.
+- **`blog`** (apps/blog, port 3002) - Prisma's blog: MDX posts in `content/blog/` plus search
+  and `/llms.mdx/*` renditions, served under `basePath: "/blog"` with assets at `/blog-static`.
+- **`eclipse`** (apps/eclipse, port 3003) - The showcase and reference docs for the Eclipse
+  design system, from MDX in `content/design-system/`. It is a static export
+  (`output: "export"`, unoptimized images) and has no `basePath`, so it is not one of the zones
+  the site app rewrites into.
+
+**Packages:**
+
+- **`@prisma-docs/ui`** (packages/ui) - Shared shadcn-style components, navigation, and helpers.
+  Private to the workspace; see the section below.
+- **`@prisma/eclipse`** (packages/eclipse) - Prisma's design system: components, styles, tokens,
+  and fonts. It is published to npm, and its `build` script runs `tsdown` and then copies the CSS
+  and fonts into `dist/`.
+
+**The structural difference to know:** `packages/ui` has no build script and its `exports` point
+straight at `src/`, so apps consume it as source. `packages/eclipse` is the opposite - every
+export resolves into `dist/`, so it must be built before anything that imports it. Turbo's
+`build` and `dev` tasks both declare `dependsOn: ["^build"]`, which is what makes `pnpm build`
+and `pnpm dev` build it first; all four apps also list `@prisma/eclipse` in `transpilePackages`.
 
 ## Commands
 
