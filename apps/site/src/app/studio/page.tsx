@@ -103,7 +103,7 @@ const studioStructuredData = createSoftwareApplicationStructuredData({
 });
 
 export const metadata = createPageMetadata({
-  title: "Prisma Studio",
+  title: "Prisma Studio | Visual Database Browser and Editor",
   description:
     "Explore, edit, and understand your data with a visual database browser for Prisma, locally or in Prisma Console.",
   path: "/studio",
