@@ -1,31 +1,33 @@
 ---
 title: Request timeout
-description: Compute closes a request when your service goes 60 seconds without sending anything. How to recognize the 504 and how to structure work that runs longer.
+description: Compute cancels a request when your service takes more than 60 seconds to start responding. How to recognize the 504 and how to structure work that runs longer.
 url: /compute/request-timeout
 metaTitle: Request timeout | Prisma Compute
-metaDescription: Prisma Compute closes a request when your service goes 60 seconds without sending data and returns 504 Gateway Time-out. How to recognize it and move longer work out of the request.
+metaDescription: Prisma Compute cancels a request when your service takes more than 60 seconds to start responding and returns 504 Gateway Time-out. How to recognize it and move longer work out of the request.
 ---
 
-Your service has **60 seconds** to send something back. Compute's ingress starts that clock when the request reaches your service and restarts it every time your service sends data. When the clock runs out, the client receives `504 Gateway Time-out` and the ingress closes its connection to your service.
+Your service has **60 seconds** to start responding. Compute's ingress starts that clock when it forwards the request to your service. If nothing has come back by then, the client receives `504 Gateway Time-out` and Compute cancels the request.
 
-For an ordinary request, that is a 60-second deadline to respond. For a [streaming response](#streaming-responses), each chunk has to arrive within 60 seconds of the one before it.
+The deadline covers the wait for your first bytes, not the time your response takes to finish. A response that has started is not cut off when it passes 60 seconds, which is how [streaming responses](#streaming-responses) work.
 
 ## What your service sees
 
-Compute does not tell your handler that the request timed out. No exception is raised, and no timeout is recorded in your logs. Your handler keeps running, but the response it eventually produces has nowhere to go.
+Compute cancels the request from outside your service, so no timeout error is raised in your code and none is written to your logs. Your handler keeps running, but the response it eventually produces has nowhere to go.
 
-Two consequences follow:
+Three consequences follow:
 
+- **The request's abort signal is how you notice.** Cancelling the request aborts the signal on it. Check `req.signal` if you want your handler to stop work it no longer needs to finish.
 - **Your own timeout handling cannot rescue the response.** A guard longer than the limit, such as `AbortSignal.timeout(90_000)`, still fires, but the client got the 504 half a minute earlier. Keep in-request timeouts under 60 seconds, for example 50, so your handler fails first and returns an error the caller can read.
-- **Work that keeps running is unprotected.** Finishing it changes nothing the caller sees, and nothing is holding the instance awake on its behalf. If the work has to complete, start it deliberately and hold the instance with [`waitUntil`](/compute/keeping-instances-awake).
+- **The instance can sleep with your handler mid-execution.** Once the request is cancelled, Compute stops counting it as in flight, even though your handler is still working. If the work has to finish, hold the instance with [`waitUntil`](/compute/keeping-instances-awake).
 
 ## How to recognize it
 
 - The client gets `504 Gateway Time-out` with a short HTML body that mentions `openresty`, about 60 seconds after the request was sent.
-- Your service logs show whatever your handler logged, with no timeout error, because your service was never told.
-- The same route succeeds whenever it responds in under 60 seconds.
+- The Console reports a 504 for that request, in your service's metrics.
+- Your own logs show whatever your handler logged, with no timeout error, because the cancellation happens outside your service.
+- The same route succeeds whenever it starts responding in under 60 seconds.
 
-A 504 like this is not a crash or a sign of an unhealthy platform. The request went 60 seconds without sending anything.
+A 504 like this is not a crash or a sign of an unhealthy platform. Your service took more than 60 seconds to send anything back.
 
 ## Work that takes longer than 60 seconds
 
@@ -62,11 +64,9 @@ Size each step to finish inside one request, and record progress as you go. A la
 
 ## Streaming responses
 
-Because the clock restarts on every chunk, this timeout does not cut a stream that keeps sending. A stream that goes quiet for 60 seconds is closed the same way as a request that never answered.
+Because the 60 seconds covers only the wait for your first bytes, a response that has started is not cut off when it runs past them. Server-sent events and other streaming responses work on that basis: send the first bytes promptly, then keep streaming.
 
-Send data well inside the window rather than close to it. For a stream with natural gaps, send a keep-alive every 30 seconds or so, such as a comment line in a server-sent events stream. That leaves room for one slow chunk without tripping the limit.
-
-Staying inside the idle timeout does not mean a connection can stay open for any length of time. Keep streams short where you can, and have the client reconnect. WebSocket connections are not supported; see [Known limitations](/compute/limitations).
+Send something early even when the real payload is not ready, and keep data flowing rather than letting a started stream sit idle for long stretches. For anything long-lived, have the client reconnect rather than holding one connection open indefinitely. WebSocket connections are not supported; see [Known limitations](/compute/limitations).
 
 ## Next steps
 
