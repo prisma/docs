@@ -1,0 +1,59 @@
+---
+title: Request timeout
+description: Every request to a Prisma Compute service must be answered within 60 seconds. What happens past that, and how to structure longer work.
+url: /compute/request-timeout
+metaTitle: Request timeout | Prisma Compute
+metaDescription: Every request to a Prisma Compute service must be answered within 60 seconds. Past that the ingress returns 504 Gateway Time-out. How to recognize it and move longer work out of the request.
+---
+
+Every HTTP request to a Prisma Compute service must be answered within **60 seconds**. The limit is enforced by Compute's ingress, in front of your service, and applies to every request in every region. When a request has been open for 60 seconds without a response, the client receives `504 Gateway Time-out` and the ingress closes its connection to your service.
+
+## What your service sees
+
+Nothing. The ingress does not notify your handler, and no error is raised inside your service. Your handler keeps running, but the response it eventually produces has nowhere to go. Two consequences follow:
+
+- **Timeouts longer than 60 seconds never fire.** If your handler guards its work with `AbortSignal.timeout`, a fetch timeout, or a job deadline longer than 60 seconds, the ingress closes the request first and your error handling never runs. Keep timeouts inside a request under 60 seconds, with headroom (for example 50 seconds), so your code fails first and can return a proper error response.
+- **The work can be paused.** Once the ingress has closed the request, Compute no longer counts it as in-flight. If nothing else keeps the instance awake, the instance can scale to zero with your handler mid-execution, and its timers and pending promises pause until the next request wakes it. See [Keeping instances awake](/compute/keeping-instances-awake).
+
+## How to recognize it
+
+- The client gets `504 Gateway Time-out` with a short HTML body that mentions `openresty`, about 60 seconds after sending the request.
+- `service logs` shows the request starting, then no error and no response from your handler.
+- The same route succeeds whenever it finishes in under 60 seconds.
+
+This is not a crash, a cold start, or platform instability. The request did more than 60 seconds of work before responding.
+
+## Work that takes longer than 60 seconds
+
+Do not tie long-running work to the lifetime of a single inbound request. Respond first, then do the work.
+
+### Respond, then continue in the background
+
+Validate the request, start the work, and return immediately. For a webhook that means a `200` or `202` before any processing. Wrap the work in `waitUntil` from `@prisma/compute` so the instance stays awake until it finishes. Without it, the instance can scale to zero as soon as the response is sent.
+
+```ts title="src/index.ts"
+import { waitUntil } from "@prisma/compute";
+
+export default {
+  async fetch(req: Request) {
+    const job = await parseWebhook(req);
+
+    waitUntil(processJob(job), {
+      // Optional. Prevents a hanging promise from keeping the instance awake indefinitely.
+      signal: AbortSignal.timeout(10 * 60_000),
+    });
+
+    return new Response(null, { status: 202 });
+  },
+};
+```
+
+`waitUntil` is best-effort. It keeps the current instance awake, but it does not make the work durable, retry failures, or continue through a restart or a new deployment. Use it for work you can afford to lose occasionally, or combine it with the next pattern.
+
+### Persist, then process in steps
+
+For work that must not be lost, have the inbound request persist a job, as a database row or a queue message, and process it from a separate trigger: a scheduled request to your service, a cron, or a worker. Keep each processing step inside a single request's 60 seconds and save progress between steps, so an interrupted step is resumed rather than restarted.
+
+## Streaming responses
+
+The limit is measured from the last byte your service sent. A streaming response that sends data, or a heartbeat, at least every 60 seconds stays open. A stream that goes silent for 60 seconds is closed the same way as an unanswered request.
