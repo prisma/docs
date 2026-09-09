@@ -2,7 +2,7 @@
 
 Everything that plugs into Prisma 8 is an extension: database packages, column types and query operations, indexes, and middleware. This folder is the single source of truth for the extension directory at
 [prisma.io/extensions](https://www.prisma.io/extensions) and the catalog table in
-the [Prisma 8 extensions docs](https://www.prisma.io/docs/orm/v8/extensions).
+the [Prisma 8 extensions docs](https://www.prisma.io/docs/orm/extensions).
 
 - `official.json`: packages maintained by Prisma.
 - `community.json`: packages maintained by the community. This is the file the
@@ -26,7 +26,7 @@ the build instead of shipping. The validation lives in `../extensions.ts`.
   "databases": ["postgresql"],
   "tags": ["vector search", "embeddings"],
   "repo": "https://github.com/prisma/orm/tree/main/packages/3-extensions/pgvector",
-  "docs": "https://www.prisma.io/docs/orm/v8/extensions/using-extensions",
+  "docs": "https://www.prisma.io/docs/orm/extensions/using-extensions",
   "example": "https://github.com/prisma/prisma-next/tree/main/examples/prisma-next-demo",
   "author": { "name": "Prisma", "url": "https://github.com/prisma" },
   "addedAt": "2026-09-09"

@@ -24,10 +24,10 @@ const HAND_WRITTEN: Record<string, UsageSnippet[]> = {
     {
       title: "Configure the database",
       file: "prisma.config.ts",
-      code: `import { defineConfig } from '@prisma/cli-engine';
+      code: `import { definePrismaConfig } from 'prisma/config';
 import { defineConfig as ormConfig } from '@prisma/orm-postgres/config';
 
-export default defineConfig({
+export default definePrismaConfig({
   orm: ormConfig({
     contract: './src/prisma/contract.prisma',
     db: {
@@ -53,10 +53,10 @@ export const db = postgres<Contract>({
     {
       title: "Configure the database",
       file: "prisma.config.ts",
-      code: `import { defineConfig } from '@prisma/cli-engine';
+      code: `import { definePrismaConfig } from 'prisma/config';
 import { defineConfig as ormConfig } from '@prisma/orm-mongo/config';
 
-export default defineConfig({
+export default definePrismaConfig({
   orm: ormConfig({
     contract: './src/prisma/contract.prisma',
     db: {
@@ -75,6 +75,7 @@ import contractJson from './contract.json' with { type: 'json' };
 export const db = mongo<Contract>({
   contractJson,
   url: process.env['MONGODB_URL']!,
+  dbName: 'app',
 });`,
     },
   ],
@@ -151,11 +152,11 @@ export function getUsageSnippets(entry: ExtensionEntry): UsageSnippet[] {
     {
       title: "Register it in the config",
       file: "prisma.config.ts",
-      code: `import { defineConfig } from '@prisma/cli-engine';
+      code: `import { definePrismaConfig } from 'prisma/config';
 import ${identifier} from '${entry.package}/control';
 import { defineConfig as ormConfig } from '@prisma/orm-postgres/config';
 
-export default defineConfig({
+export default definePrismaConfig({
   orm: ormConfig({
     contract: './src/prisma/contract.prisma',
     extensions: [${identifier}],

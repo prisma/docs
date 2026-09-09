@@ -116,18 +116,24 @@ export function SubmitExtensionForm() {
     slug: form.slug || slugFromPackage(form.package),
     status: form.status,
     databases: [
-      ...form.databases,
-      ...form.otherDatabases
-        .split(",")
-        .map((database) => database.trim().toLowerCase())
-        .filter(Boolean),
+      ...new Set([
+        ...form.databases,
+        ...form.otherDatabases
+          .split(",")
+          .map((database) => database.trim().toLowerCase())
+          .filter(Boolean),
+      ]),
     ],
     tldr: form.tldr,
     description: form.description,
-    tags: form.tags
-      .split(",")
-      .map((tag) => tag.trim())
-      .filter(Boolean),
+    tags: [
+      ...new Set(
+        form.tags
+          .split(",")
+          .map((tag) => tag.trim())
+          .filter(Boolean),
+      ),
+    ],
     repo: form.repo,
     docs: form.docs,
     example: form.example,

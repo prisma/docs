@@ -147,6 +147,8 @@ export function validateExtensionEntry(input: unknown): string[] {
     )
   ) {
     problems.push("databases must list 1 to 6 lowercase database slugs, such as postgresql");
+  } else if (new Set(entry.databases).size !== entry.databases.length) {
+    problems.push("databases must not repeat a slug");
   }
   if (
     !Array.isArray(entry.tags) ||
@@ -154,6 +156,8 @@ export function validateExtensionEntry(input: unknown): string[] {
     !entry.tags.every((tag) => isNonEmptyString(tag, 32))
   ) {
     problems.push("tags must be an array of up to 8 short strings");
+  } else if (new Set(entry.tags).size !== entry.tags.length) {
+    problems.push("tags must not repeat");
   }
   if (!isHttpsUrl(entry.repo)) problems.push("repo must be an https URL");
   if (entry.docs !== undefined && !isHttpsUrl(entry.docs)) {

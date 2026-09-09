@@ -83,8 +83,9 @@ export function toRegistryEntry(input: SubmissionInput, addedAt: string): Extens
     status: input.status,
     tldr: input.tldr,
     description: input.description,
-    databases: input.databases,
-    tags: input.tags,
+    // The form can name a database twice (checkbox plus the free-form field).
+    databases: [...new Set(input.databases)],
+    tags: [...new Set(input.tags)],
     repo: input.repo,
     ...(input.docs ? { docs: input.docs } : {}),
     ...(input.example ? { example: input.example } : {}),
@@ -130,26 +131,47 @@ export async function assertPublishedOnNpm(packageName: string) {
   }
 }
 
+const SCALAR = String.raw`(?:"[^"\n]*"|-?\d+(?:\.\d+)?|true|false|null)`;
+const SCALAR_ARRAY = new RegExp(String.raw`\[\n\s+(${SCALAR}(?:,\n\s+${SCALAR})*)\n\s+\]`, "g");
+
 /**
- * Print the registry the way the checked-in file is formatted: one entry per
- * block, scalar arrays on one line. Keeps the pull request diff to the added
- * entry only.
+ * Print the registry the way the checked-in file is formatted: two-space JSON
+ * with scalar arrays (`databases`, `tags`) on one line and objects expanded,
+ * which is what `oxfmt` keeps the file as. Keeps the pull request diff to the
+ * added entry only. `apps/site/scripts/extensions-registry.test.ts` checks it
+ * reproduces both registry files byte for byte.
  */
 export function formatRegistry(entries: ExtensionEntry[]): string {
-  const formatted = entries.map((entry) => {
-    const lines = Object.entries(entry).map(([key, value]) => {
-      const printed = Array.isArray(value)
-        ? `[${value.map((item) => JSON.stringify(item)).join(", ")}]`
-        : typeof value === "object" && value !== null
-          ? `{ ${Object.entries(value)
-              .map(([k, v]) => `${JSON.stringify(k)}: ${JSON.stringify(v)}`)
-              .join(", ")} }`
-          : JSON.stringify(value);
-      return `    ${JSON.stringify(key)}: ${printed}`;
-    });
-    return `  {\n${lines.join(",\n")}\n  }`;
-  });
-  return `[\n${formatted.join(",\n")}\n]\n`;
+  const json = JSON.stringify(entries, null, 2).replace(
+    SCALAR_ARRAY,
+    (_match, items: string) => `[${items.split(/,\n\s+/).join(", ")}]`,
+  );
+  return `${json}\n`;
+}
+
+/**
+ * Only accept posts from our own pages. Browsers set `Origin` on cross-site
+ * POSTs and a page cannot forge it, so matching it against the request host
+ * (plus the production hosts and local development) keeps third-party sites
+ * from submitting through a visitor's browser.
+ */
+export function isTrustedOrigin(headers: Headers): boolean {
+  const origin = headers.get("origin");
+  if (!origin) return false;
+  const host = headers.get("x-forwarded-host") ?? headers.get("host");
+  let url: URL;
+  try {
+    url = new URL(origin);
+  } catch {
+    return false;
+  }
+  return (
+    (host !== null && url.host === host) ||
+    url.host === "prisma.io" ||
+    url.host === "www.prisma.io" ||
+    url.hostname === "localhost" ||
+    url.hostname === "127.0.0.1"
+  );
 }
 
 /** A prefilled GitHub issue for when automatic pull requests are unavailable. */

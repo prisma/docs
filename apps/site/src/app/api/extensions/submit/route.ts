@@ -5,6 +5,7 @@ import {
   buildFallbackIssueUrl,
   fetchCurrentRegistry,
   getGitHubConfig,
+  isTrustedOrigin,
   openPullRequest,
   submissionSchema,
   SubmissionError,
@@ -20,6 +21,15 @@ const recentSubmissions = new Map<string, number[]>();
 /** Best-effort per-instance limiter. Enough to stop a runaway script. */
 function isRateLimited(key: string): boolean {
   const now = Date.now();
+  // Forget addresses whose window has passed so a warm instance does not keep
+  // every address it has ever seen.
+  if (recentSubmissions.size > 100) {
+    for (const [address, stamps] of recentSubmissions) {
+      if (stamps.every((timestamp) => now - timestamp >= RATE_LIMIT_WINDOW_MS)) {
+        recentSubmissions.delete(address);
+      }
+    }
+  }
   const timestamps = (recentSubmissions.get(key) ?? []).filter(
     (timestamp) => now - timestamp < RATE_LIMIT_WINDOW_MS,
   );
@@ -29,26 +39,8 @@ function isRateLimited(key: string): boolean {
   return false;
 }
 
-/** Only accept posts from our own pages. */
-function isTrustedOrigin(request: Request): boolean {
-  const origin = request.headers.get("origin");
-  if (!origin) return false;
-  const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
-  try {
-    const originHost = new URL(origin).host;
-    return (
-      originHost === host ||
-      originHost === "prisma.io" ||
-      originHost === "www.prisma.io" ||
-      originHost.startsWith("localhost")
-    );
-  } catch {
-    return false;
-  }
-}
-
 export async function POST(request: Request) {
-  if (!isTrustedOrigin(request)) {
+  if (!isTrustedOrigin(request.headers)) {
     return NextResponse.json(
       { error: "Cross-site submissions are not accepted." },
       { status: 403 },
