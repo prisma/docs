@@ -22,6 +22,11 @@ Classify every docs page as one of three kinds before writing or moving content:
 3. New top-level sections need an entry in `llmsSections` in `src/lib/llms.ts` (see `.claude/skills/docs-agent-ready`).
 4. Do not rename the `orm/`, `cli/`, or `guides/` folders or their meta.json titles, and keep the `orm/v7`, `cli/v7`, `guides/v7`, and `(index)/v7` meta.json titles exactly `"v7"`: `src/lib/version.ts` path maps and `src/lib/versioned-sidebar-tree.ts` match on those strings and break the version switcher silently.
 
+## Shared content
+
+1. Text that more than one page must state identically lives in `content/snippets/` and is pulled in with `<include>…/snippets/<name>.mdx</include>`. That directory is outside `content/docs`, so snippets are not pages. See `content/snippets/README.md`.
+2. The Accelerate retirement date and its remediation links live in `content/snippets/accelerate-retirement.mdx`. Never write them into a page: put page-specific context in the callout around the include. `src/lib/accelerate-retirement.test.ts` fails the build if a page restates the notice or states a different date.
+
 ## Generated content
 
 1. `content/docs/rest-api/endpoints/` and `public/prisma-rest-api.postman_collection.json` are generated. Never hand-edit; run `pnpm generate:rest-api-docs`.
