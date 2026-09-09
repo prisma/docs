@@ -3,6 +3,7 @@ import type { BaseLayoutProps } from "@/components/layout/shared";
 import Image from "next/image";
 import logoLight from "../../public/logo/full-color.svg";
 import logoDark from "../../public/logo/full-color-white.svg";
+import logoMark from "../../public/logo/mark.svg";
 import { DiscordIcon } from "@/components/icons/discord";
 import { NavBreadcrumb } from "@/components/layout/nav-breadcrumb";
 import Link from "next/link";
@@ -11,6 +12,10 @@ import Link from "next/link";
 // rather than one recoloured file: the wordmark is solid black in the light
 // asset and solid white in the dark one, while the prism mark keeps its own
 // cyan/yellow/red in both.
+//
+// The mark on its own needs no dark sibling — it is the same cyan/yellow/red in
+// either theme. Copied from the brand kit
+// (apps/site/public/brand-kit/logo-mark/logo-mark.svg).
 export const logo = (
   <>
     <Image
@@ -58,19 +63,24 @@ export function baseOptions(): BaseLayoutProps {
     nav: {
       title: (
         <>
-          {/* The lockup is the segment that gives way when the navbar runs out
-              of room: below `lg` the crumb keeps `docs / <section>` instead of
-              truncating the section name. `lg:contents` so the link and its
-              separator stay flex items of the navbar row when shown. */}
-          <span className="max-lg:hidden lg:contents">
-            <Link
-              href="https://www.prisma.io"
-              className="mb-0 hover:mb-1 transition-[margin] duration-300 motion-reduce:transition-none"
-            >
-              {logo}
-            </Link>
-            <span className="text-fd-muted-foreground">/</span>
-          </span>
+          {/* The wordmark is what gives way when the navbar runs out of room:
+              below `lg` the lockup swaps for the square mark, which costs ~28px
+              instead of ~110px, so the crumb keeps `docs / <section>` at every
+              width instead of truncating the section name. `lg:contents` so the
+              two lockup files still lay out as direct children of the link. */}
+          <Link
+            href="https://www.prisma.io"
+            className="mb-0 hover:mb-1 transition-[margin] duration-300 motion-reduce:transition-none"
+          >
+            <span className="max-lg:hidden lg:contents">{logo}</span>
+            <Image
+              alt="Prisma"
+              src={logoMark}
+              aria-label="Prisma"
+              className="h-7 w-auto shrink-0 lg:hidden"
+            />
+          </Link>
+          <span className="text-fd-muted-foreground">/</span>
           <Link href="/" className="group relative inline-block pl-3 -ml-3!">
             <span className="font-mono text-lg block translate-y-px">docs</span>
           </Link>
