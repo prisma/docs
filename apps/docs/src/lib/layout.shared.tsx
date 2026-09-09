@@ -4,6 +4,7 @@ import Image from "next/image";
 import logoLight from "../../public/logo/full-color.svg";
 import logoDark from "../../public/logo/full-color-white.svg";
 import { DiscordIcon } from "@/components/icons/discord";
+import { NavBreadcrumb } from "@/components/layout/nav-breadcrumb";
 import Link from "next/link";
 
 // The full-colour lockup (prism mark + wordmark) from the redesign. Two files
@@ -12,12 +13,17 @@ import Link from "next/link";
 // cyan/yellow/red in both.
 export const logo = (
   <>
-    <Image alt="Prisma" src={logoLight} aria-label="Prisma" className="h-7 w-auto dark:hidden" />
+    <Image
+      alt="Prisma"
+      src={logoLight}
+      aria-label="Prisma"
+      className="h-7 w-auto shrink-0 dark:hidden"
+    />
     <Image
       alt="Prisma"
       src={logoDark}
       aria-label="Prisma"
-      className="hidden h-7 w-auto dark:block"
+      className="hidden h-7 w-auto shrink-0 dark:block"
     />
   </>
 );
@@ -52,16 +58,23 @@ export function baseOptions(): BaseLayoutProps {
     nav: {
       title: (
         <>
-          <Link
-            href="https://www.prisma.io"
-            className="mb-0 hover:mb-1 transition-[margin] duration-300 motion-reduce:transition-none"
-          >
-            {logo}
-          </Link>
-          <span className="text-fd-muted-foreground">/</span>
+          {/* The lockup is the segment that gives way when the navbar runs out
+              of room: below `lg` the crumb keeps `docs / <section>` instead of
+              truncating the section name. `lg:contents` so the link and its
+              separator stay flex items of the navbar row when shown. */}
+          <span className="max-lg:hidden lg:contents">
+            <Link
+              href="https://www.prisma.io"
+              className="mb-0 hover:mb-1 transition-[margin] duration-300 motion-reduce:transition-none"
+            >
+              {logo}
+            </Link>
+            <span className="text-fd-muted-foreground">/</span>
+          </span>
           <Link href="/" className="group relative inline-block pl-3 -ml-3!">
             <span className="font-mono text-lg block translate-y-px">docs</span>
           </Link>
+          <NavBreadcrumb />
         </>
       ),
       transparentMode: "none",
