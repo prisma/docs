@@ -1,10 +1,9 @@
 import { Badge } from "@/components/ui/badge";
 import { CheckBold, Database } from "@/components/icons/forma";
 import {
-  EXTENSION_DATABASE_LABELS,
-  EXTENSION_KIND_LABELS,
   EXTENSION_SOURCE_LABELS,
   EXTENSION_STATUS_LABELS,
+  getDatabaseLabel,
   type ExtensionEntry,
 } from "@prisma-docs/ui/data/extensions";
 
@@ -18,10 +17,6 @@ export function SourceBadge({ source }: { source: ExtensionEntry["source"] }) {
     );
   }
   return <Badge variant="outline">{EXTENSION_SOURCE_LABELS.community}</Badge>;
-}
-
-export function KindBadge({ kind }: { kind: ExtensionEntry["kind"] }) {
-  return <Badge variant="secondary">{EXTENSION_KIND_LABELS[kind]}</Badge>;
 }
 
 /**
@@ -47,7 +42,7 @@ export function DatabaseBadges({ databases }: { databases: ExtensionEntry["datab
       {databases.map((database) => (
         <Badge key={database} variant="outline" className="text-muted-foreground">
           <Database aria-hidden />
-          {EXTENSION_DATABASE_LABELS[database]}
+          {getDatabaseLabel(database)}
         </Badge>
       ))}
     </>

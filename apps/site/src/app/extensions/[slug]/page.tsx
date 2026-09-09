@@ -7,19 +7,15 @@ import {
   getExtensionBySlug,
   getInstallCommand,
   getNpmUrl,
-  EXTENSION_DATABASE_LABELS,
-  EXTENSION_KIND_LABELS,
+  getDatabaseLabel,
+  isDatabase,
+  isMiddleware,
   EXTENSION_SOURCE_LABELS,
   EXTENSION_STATUS_LABELS,
 } from "@prisma-docs/ui/data/extensions";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Github } from "@/components/icons/forma";
-import {
-  DatabaseBadges,
-  KindBadge,
-  SourceBadge,
-  StatusBadge,
-} from "@/components/extensions/badges";
+import { DatabaseBadges, SourceBadge, StatusBadge } from "@/components/extensions/badges";
 import { CopyCommand, MONO } from "@/components/extensions/copy-command";
 import { ExtensionCard } from "@/components/extensions/extension-card";
 import { PanelHero } from "@/components/extensions/panel-hero";
@@ -43,10 +39,10 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const maintainer =
     entry.source === "official" ? "maintained by Prisma" : `maintained by ${entry.author.name}`;
   return createPageMetadata({
-    title: `${entry.name} | Prisma 8 ${EXTENSION_KIND_LABELS[entry.kind]}`,
+    title: `${entry.name} | Prisma 8 extension`,
     description: `${entry.tldr} ${entry.package} for Prisma ORM 8, ${maintainer}.`,
     path: `/extensions/${entry.slug}`,
-    ogKicker: `Prisma 8 ${EXTENSION_KIND_LABELS[entry.kind]}`,
+    ogKicker: "Prisma 8 extension",
   });
 }
 
@@ -81,7 +77,9 @@ export default async function ExtensionPage({ params }: { params: Promise<Params
   const related = extensions
     .filter((other) => other.slug !== entry.slug)
     .filter(
-      (other) => other.kind === entry.kind || other.tags.some((tag) => entry.tags.includes(tag)),
+      (other) =>
+        other.tags.some((tag) => entry.tags.includes(tag)) ||
+        other.databases.some((database) => entry.databases.includes(database)),
     )
     .slice(0, 3);
 
@@ -96,12 +94,11 @@ export default async function ExtensionPage({ params }: { params: Promise<Params
     ...(entry.importPath
       ? [{ label: "Import from", value: <code className={MONO}>{entry.importPath}</code> }]
       : []),
-    { label: "Type", value: EXTENSION_KIND_LABELS[entry.kind] },
     { label: "Maintainer", value: EXTENSION_SOURCE_LABELS[entry.source] },
     { label: "Status", value: EXTENSION_STATUS_LABELS[entry.status] },
     {
       label: "Databases",
-      value: entry.databases.map((database) => EXTENSION_DATABASE_LABELS[database]).join(", "),
+      value: entry.databases.map(getDatabaseLabel).join(", "),
     },
     {
       label: "Author",
@@ -131,7 +128,7 @@ export default async function ExtensionPage({ params }: { params: Promise<Params
 
       <PanelHero
         align="start"
-        kicker={`Prisma 8 ${EXTENSION_KIND_LABELS[entry.kind].toLowerCase()}`}
+        kicker="Prisma 8 extension"
         title={entry.name}
         lead={entry.tldr}
         breadcrumb={
@@ -149,7 +146,6 @@ export default async function ExtensionPage({ params }: { params: Promise<Params
       >
         <div className="mt-6 flex flex-wrap items-center gap-1.5">
           <SourceBadge source={entry.source} />
-          <KindBadge kind={entry.kind} />
           <StatusBadge status={entry.status} />
           <DatabaseBadges databases={entry.databases} />
         </div>
@@ -225,9 +221,9 @@ export default async function ExtensionPage({ params }: { params: Promise<Params
               </div>
             ))}
 
-            {entry.kind === "extension" && entry.source === "official" ? (
+            {entry.source === "official" && !isMiddleware(entry) && !isDatabase(entry) ? (
               <p className="max-w-[70ch] text-sm leading-relaxed text-muted-foreground">
-                Then run <code className={MONO}>npx prisma@next db init</code> (or{" "}
+                Then run <code className={MONO}>npx prisma@latest db init</code> (or{" "}
                 <code className={MONO}>db update</code> on an existing database). The extension
                 ships its own migration for anything the database needs installed. The full
                 walkthrough is in the{" "}

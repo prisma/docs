@@ -3,15 +3,11 @@
 import { useDeferredValue, useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Database, Layers, Search } from "@/components/icons/forma";
+import { Database, Search } from "@/components/icons/forma";
 import {
-  EXTENSION_DATABASE_LABELS,
-  EXTENSION_DATABASES,
-  EXTENSION_KIND_LABELS,
-  EXTENSION_KINDS,
-  type ExtensionDatabase,
+  getDatabaseLabel,
+  getListedDatabases,
   type ExtensionEntry,
-  type ExtensionKind,
   type ExtensionSource,
 } from "@prisma-docs/ui/data/extensions";
 import { cn } from "@/lib/utils";
@@ -74,20 +70,19 @@ function Chip({
 export function ExtensionsDirectory({ entries }: { entries: ExtensionEntry[] }) {
   const [query, setQuery] = useState("");
   const [source, setSource] = useState<SourceFilter>("all");
-  const [kind, setKind] = useState<ExtensionKind | null>(null);
-  const [database, setDatabase] = useState<ExtensionDatabase | null>(null);
+  const [database, setDatabase] = useState<string | null>(null);
   const deferredQuery = useDeferredValue(query);
+  const databases = useMemo(() => getListedDatabases(entries), [entries]);
 
   const filtered = useMemo(
     () =>
       entries.filter(
         (entry) =>
           (source === "all" || entry.source === source) &&
-          (kind === null || entry.kind === kind) &&
           (database === null || entry.databases.includes(database)) &&
           matchesQuery(entry, deferredQuery),
       ),
-    [entries, source, kind, database, deferredQuery],
+    [entries, source, database, deferredQuery],
   );
 
   const official = filtered.filter((entry) => entry.source === "official");
@@ -97,11 +92,10 @@ export function ExtensionsDirectory({ entries }: { entries: ExtensionEntry[] }) 
     official: entries.filter((entry) => entry.source === "official").length,
     community: entries.filter((entry) => entry.source === "community").length,
   };
-  const hasActiveFilter = source !== "all" || kind !== null || database !== null || query !== "";
+  const hasActiveFilter = source !== "all" || database !== null || query !== "";
   const clear = () => {
     setQuery("");
     setSource("all");
-    setKind(null);
     setDatabase(null);
   };
 
@@ -116,7 +110,7 @@ export function ExtensionsDirectory({ entries }: { entries: ExtensionEntry[] }) 
           type="search"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search extensions: vector, geo, json, cache…"
+          placeholder="Search by name, package, database, or keyword"
           aria-label="Search extensions"
           className="h-12 rounded-full border-black/[0.1] bg-white pl-11 pr-4 text-base shadow-[0_1px_2px_rgba(21,21,21,0.04)] md:text-base"
           autoComplete="off"
@@ -150,26 +144,15 @@ export function ExtensionsDirectory({ entries }: { entries: ExtensionEntry[] }) 
             </button>
           ))}
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {EXTENSION_KINDS.map((value) => (
-            <Chip
-              key={value}
-              active={kind === value}
-              onClick={() => setKind(kind === value ? null : value)}
-            >
-              <Layers aria-hidden />
-              {EXTENSION_KIND_LABELS[value]}
-            </Chip>
-          ))}
-          <span aria-hidden className="mx-1 hidden h-5 w-px bg-black/[0.08] md:block" />
-          {EXTENSION_DATABASES.map((value) => (
+        <div className="flex flex-wrap items-center gap-2" aria-label="Filter by database">
+          {databases.map((value) => (
             <Chip
               key={value}
               active={database === value}
               onClick={() => setDatabase(database === value ? null : value)}
             >
               <Database aria-hidden />
-              {EXTENSION_DATABASE_LABELS[value]}
+              {getDatabaseLabel(value)}
             </Chip>
           ))}
         </div>
@@ -177,9 +160,10 @@ export function ExtensionsDirectory({ entries }: { entries: ExtensionEntry[] }) 
 
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-black/[0.1] px-6 py-16 text-center">
-          <p className="text-foreground">No extensions match.</p>
+          <p className="text-foreground">No extensions match these filters.</p>
           <p className="max-w-md text-sm leading-relaxed text-muted-foreground">
-            Built one that should be here? Submit it and we open the pull request for you.
+            If you maintain one that belongs here, submit it and the form opens the pull request for
+            you.
           </p>
           <div className="flex gap-3">
             {hasActiveFilter ? (
@@ -197,14 +181,14 @@ export function ExtensionsDirectory({ entries }: { entries: ExtensionEntry[] }) 
           {official.length > 0 ? (
             <Section
               title="By Prisma"
-              blurb="Maintained by the Prisma team and released alongside Prisma 8."
+              blurb="Maintained by the Prisma team and released with Prisma 8."
               entries={official}
             />
           ) : null}
           {community.length > 0 ? (
             <Section
               title="Community"
-              blurb="Built and maintained by the community. Read each package's README before you depend on it."
+              blurb="Maintained by their authors, who document registration in each package's README."
               entries={community}
             />
           ) : null}

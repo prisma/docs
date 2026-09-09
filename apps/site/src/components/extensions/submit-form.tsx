@@ -8,14 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowRight, CheckCircle, Github } from "@/components/icons/forma";
 import {
-  EXTENSION_DATABASE_LABELS,
-  EXTENSION_DATABASES,
-  EXTENSION_KIND_LABELS,
-  EXTENSION_KINDS,
   EXTENSION_STATUS_LABELS,
   EXTENSION_STATUSES,
-  type ExtensionDatabase,
-  type ExtensionKind,
+  KNOWN_DATABASES,
+  getDatabaseLabel,
   type ExtensionStatus,
 } from "@prisma-docs/ui/data/extensions";
 import { slugFromPackage, submissionSchema } from "@/lib/extensions/submission";
@@ -26,9 +22,10 @@ type FormState = {
   package: string;
   slug: string;
   slugTouched: boolean;
-  kind: ExtensionKind;
   status: ExtensionStatus;
-  databases: ExtensionDatabase[];
+  databases: string[];
+  /** Databases outside KNOWN_DATABASES, comma separated, for an extension that adds one. */
+  otherDatabases: string;
   tldr: string;
   description: string;
   tags: string;
@@ -45,9 +42,9 @@ const initialState: FormState = {
   package: "",
   slug: "",
   slugTouched: false,
-  kind: "extension",
   status: "release-candidate",
   databases: ["postgresql"],
+  otherDatabases: "",
   tldr: "",
   description: "",
   tags: "",
@@ -117,9 +114,14 @@ export function SubmitExtensionForm() {
     name: form.name,
     package: form.package,
     slug: form.slug || slugFromPackage(form.package),
-    kind: form.kind,
     status: form.status,
-    databases: form.databases,
+    databases: [
+      ...form.databases,
+      ...form.otherDatabases
+        .split(",")
+        .map((database) => database.trim().toLowerCase())
+        .filter(Boolean),
+    ],
     tldr: form.tldr,
     description: form.description,
     tags: form.tags
@@ -142,7 +144,7 @@ export function SubmitExtensionForm() {
     if (!local.success) {
       const collected: Record<string, string> = {};
       for (const issue of local.error.issues) {
-        const key = issue.path.join(".") || "form";
+        const key = String(issue.path[0] ?? "form");
         if (!collected[key]) collected[key] = issue.message;
       }
       setResult({ kind: "error", message: "Check the highlighted fields.", issues: collected });
@@ -177,7 +179,9 @@ export function SubmitExtensionForm() {
       }
       const collected: Record<string, string> = {};
       for (const issue of json.issues ?? []) {
-        if (!collected[issue.path]) collected[issue.path] = issue.message;
+        // Array items report as "databases.0"; the form shows errors per field.
+        const key = issue.path.split(".")[0] || "form";
+        if (!collected[key]) collected[key] = issue.message;
       }
       setResult({ kind: "error", message: json.error ?? "Submission failed.", issues: collected });
     } catch {
@@ -191,8 +195,7 @@ export function SubmitExtensionForm() {
         <CheckCircle className="size-8 text-prism-cyan-700" aria-hidden />
         <h2 className="text-[clamp(1.375rem,2vw,1.75rem)] leading-[1.15]">Pull request opened</h2>
         <p className="max-w-[56ch] leading-relaxed text-muted-foreground">
-          Thanks. A maintainer reviews the listing, and it goes live on the next deploy after the
-          merge.
+          A maintainer reviews the listing, and it goes live on the next deploy after the merge.
         </p>
         {result.prUrl ? (
           <Button asChild size="lg">
@@ -297,21 +300,7 @@ export function SubmitExtensionForm() {
       </Fieldset>
 
       <Fieldset title="What it is">
-        <div className="grid gap-5 md:grid-cols-3">
-          <Field label="Type" htmlFor="kind" error={issues.kind}>
-            <select
-              id="kind"
-              className={selectClass}
-              value={form.kind}
-              onChange={(event) => update("kind", event.target.value as ExtensionKind)}
-            >
-              {EXTENSION_KINDS.map((kind) => (
-                <option key={kind} value={kind}>
-                  {EXTENSION_KIND_LABELS[kind]}
-                </option>
-              ))}
-            </select>
-          </Field>
+        <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
           <Field label="Status" htmlFor="status" error={issues.status}>
             <select
               id="status"
@@ -328,8 +317,8 @@ export function SubmitExtensionForm() {
           </Field>
           <div className="flex flex-col gap-2">
             <span className="text-sm font-medium text-foreground">Databases</span>
-            <div className="flex h-9 items-center gap-5">
-              {EXTENSION_DATABASES.map((database) => (
+            <div className="flex min-h-9 flex-wrap items-center gap-x-5 gap-y-2">
+              {KNOWN_DATABASES.map((database) => (
                 <label
                   key={database}
                   className="flex cursor-pointer items-center gap-2 text-sm text-foreground"
@@ -345,13 +334,24 @@ export function SubmitExtensionForm() {
                       )
                     }
                   />
-                  {EXTENSION_DATABASE_LABELS[database]}
+                  {getDatabaseLabel(database)}
                 </label>
               ))}
             </div>
+            <Input
+              id="otherDatabases"
+              value={form.otherDatabases}
+              placeholder="Other, comma separated: cockroachdb, duckdb"
+              aria-label="Other databases"
+              onChange={(event) => update("otherDatabases", event.target.value)}
+            />
             {issues.databases ? (
               <p className="text-xs text-destructive">{issues.databases}</p>
-            ) : null}
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                The databases it works with, or the database it adds to Prisma 8.
+              </p>
+            )}
           </div>
         </div>
         <Field

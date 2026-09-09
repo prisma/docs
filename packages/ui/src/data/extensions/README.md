@@ -1,6 +1,6 @@
 # Prisma 8 extension registry
 
-This folder is the single source of truth for the extension directory at
+Everything that plugs into Prisma 8 is an extension: database packages, column types and query operations, indexes, and middleware. This folder is the single source of truth for the extension directory at
 [prisma.io/extensions](https://www.prisma.io/extensions) and the catalog table in
 the [Prisma 8 extensions docs](https://www.prisma.io/docs/orm/v8/extensions).
 
@@ -19,7 +19,6 @@ the build instead of shipping. The validation lives in `../extensions.ts`.
   "slug": "pgvector",
   "name": "pgvector",
   "package": "@prisma/orm-extension-pgvector",
-  "kind": "extension",
   "source": "official",
   "status": "release-candidate",
   "tldr": "Vector columns and similarity search for embeddings.",
@@ -40,14 +39,13 @@ the build instead of shipping. The validation lives in `../extensions.ts`.
 | `name`        | yes      | Display name.                                                                    |
 | `package`     | yes      | npm package name. Must be published.                                             |
 | `importPath`  | no       | Import specifier when it differs from `package` (built-in middleware).           |
-| `kind`        | yes      | `extension` (adds database capabilities) or `middleware` (wraps queries).        |
 | `source`      | yes      | `official` or `community`.                                                       |
 | `status`      | yes      | `stable`, `release-candidate`, or `experimental`.                                |
 | `builtIn`     | no       | `true` when the code ships inside a database package and needs no extra install. |
 | `tldr`        | yes      | One sentence, max 140 characters. Shown on cards and in the docs table.          |
 | `description` | yes      | One paragraph, max 600 characters. Shown on the detail page.                     |
-| `databases`   | yes      | Any of `postgresql`, `mongodb`.                                                  |
-| `tags`        | yes      | Up to 6 short strings. Used for search.                                          |
+| `databases`   | yes      | Lowercase slugs the extension works with (`postgresql`, `mongodb`, ...). An extension that adds a database names the database it adds. |
+| `tags`        | yes      | Up to 8 lowercase keywords. `middleware` and `database` place the entry in the matching docs tables. |
 | `repo`        | yes      | https URL of the source repository.                                              |
 | `docs`        | no       | https URL of the documentation.                                                  |
 | `example`     | no       | https URL of a runnable example.                                                 |

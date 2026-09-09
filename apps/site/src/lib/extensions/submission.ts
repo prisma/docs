@@ -1,7 +1,5 @@
 import { z } from "zod";
 import {
-  EXTENSION_DATABASES,
-  EXTENSION_KINDS,
   EXTENSION_STATUSES,
   extensions,
   validateExtensionEntry,
@@ -40,9 +38,17 @@ export const submissionSchema = z.object({
     .min(1)
     .max(64)
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Lowercase letters, digits, and dashes only"),
-  kind: z.enum(EXTENSION_KINDS),
   status: z.enum(EXTENSION_STATUSES),
-  databases: z.array(z.enum(EXTENSION_DATABASES)).min(1, "Pick at least one database"),
+  databases: z
+    .array(
+      z
+        .string()
+        .trim()
+        .toLowerCase()
+        .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Use a lowercase slug such as postgresql"),
+    )
+    .min(1, "Name at least one database")
+    .max(6),
   tldr: z.string().trim().min(10).max(140),
   description: z.string().trim().min(40).max(600),
   tags: z.array(z.string().trim().min(1).max(32)).max(6),
@@ -73,7 +79,6 @@ export function toRegistryEntry(input: SubmissionInput, addedAt: string): Extens
     slug: input.slug,
     name: input.name,
     package: input.package,
-    kind: input.kind,
     source: "community",
     status: input.status,
     tldr: input.tldr,
@@ -240,7 +245,6 @@ export async function openPullRequest(
   const body = [
     `Adds **${entry.name}** (\`${entry.package}\`) to the community extension directory.`,
     "",
-    `- Type: ${entry.kind}`,
     `- Databases: ${entry.databases.join(", ")}`,
     `- Status: ${entry.status}`,
     `- Source: ${entry.repo}`,

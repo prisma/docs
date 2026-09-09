@@ -15,15 +15,15 @@ export const metadata = createPageMetadata({
 const steps = [
   {
     title: "Publish to npm",
-    body: "The directory lists published packages only. Follow the extension pack layout from the author guide so users can register it in prisma.config.ts and their client.",
+    body: "The directory lists published packages only, so follow the extension pack layout from the author guide and publish before you submit.",
   },
   {
     title: "Fill in the form",
-    body: "Name, one-line summary, databases, and links. We validate the entry and check that the package resolves on npm.",
+    body: "Give the name, a one-line summary, the databases it works with or adds, and the links, and the form checks the entry and confirms the package resolves on npm.",
   },
   {
     title: "We open the pull request",
-    body: "The entry is appended to the community registry in prisma/web. A maintainer reviews it, and the listing goes live on the next deploy after the merge.",
+    body: "The entry is appended to the community registry in prisma/web, a maintainer reviews the pull request, and the listing goes live on the next deploy after the merge.",
   },
 ];
 
@@ -34,7 +34,7 @@ export default function SubmitExtensionPage() {
         align="start"
         kicker="Prisma ORM 8"
         title="Submit an extension"
-        lead="Built something for Prisma 8? List it here so every Prisma user can find it."
+        lead="List a published Prisma 8 extension in the directory. The form validates the entry and opens the pull request for you."
         breadcrumb={
           <Link
             href="/extensions"

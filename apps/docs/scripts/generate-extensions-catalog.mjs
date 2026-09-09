@@ -8,11 +8,12 @@
 //
 // A table lives between two MDX comments in a content file:
 //
-//   {/* extensions-catalog:start kind=extension */}
+//   {/* extensions-catalog:start tag=middleware */}
 //   ...generated...
 //   {/* extensions-catalog:end */}
 //
-// `kind` is `extension`, `middleware`, or `all`. MDX comments are stripped from
+// Options: none (every entry), `tag=<tag>` (entries carrying the tag), or
+// `not-tag=<tag>` (entries without it). MDX comments are stripped from
 // the rendered page and from the llms.txt renditions, so the generated table is
 // plain markdown that agents and search engines read as-is.
 
@@ -34,7 +35,17 @@ const TARGETS = [
 const MARKER =
   /(\{\/\* extensions-catalog:start([^*]*)\*\/\}\n)([\s\S]*?)(\{\/\* extensions-catalog:end \*\/\})/g;
 
-const DATABASE_LABELS = { postgresql: "PostgreSQL", mongodb: "MongoDB" };
+const DATABASE_LABELS = {
+  postgresql: "PostgreSQL",
+  mongodb: "MongoDB",
+  sqlite: "SQLite",
+  mysql: "MySQL",
+  mariadb: "MariaDB",
+  cockroachdb: "CockroachDB",
+  mssql: "SQL Server",
+};
+const databaseLabel = (slug) =>
+  DATABASE_LABELS[slug] ?? slug.charAt(0).toUpperCase() + slug.slice(1);
 const STATUS_LABELS = {
   stable: "Stable",
   "release-candidate": "Release candidate",
@@ -54,8 +65,12 @@ function escapeCell(text) {
   return text.replace(/\|/g, "\\|");
 }
 
-function renderTable(kind) {
-  const rows = entries.filter((entry) => kind === "all" || entry.kind === kind);
+function renderTable(options) {
+  const rows = entries.filter((entry) => {
+    if (options.tag && !entry.tags.includes(options.tag)) return false;
+    if (options["not-tag"] && entry.tags.includes(options["not-tag"])) return false;
+    return true;
+  });
   const header = [
     "| Name | What it adds | Package | Databases | By |",
     "| --- | --- | --- | --- | --- |",
@@ -69,7 +84,7 @@ function renderTable(kind) {
     const pkg = entry.builtIn
       ? `\`${entry.importPath ?? entry.package}\` (built in)`
       : `\`${entry.package}\``;
-    const databases = entry.databases.map((database) => DATABASE_LABELS[database]).join(", ");
+    const databases = entry.databases.map(databaseLabel).join(", ");
     const by =
       entry.source === "official"
         ? "Prisma"
@@ -80,7 +95,7 @@ function renderTable(kind) {
 }
 
 function parseOptions(raw) {
-  const options = { kind: "all" };
+  const options = {};
   for (const pair of raw.trim().split(/\s+/).filter(Boolean)) {
     const [key, value] = pair.split("=");
     if (key && value) options[key] = value;
@@ -96,8 +111,7 @@ for (const file of TARGETS) {
   let matched = false;
   const next = current.replace(MARKER, (_match, start, rawOptions, _body, end) => {
     matched = true;
-    const { kind } = parseOptions(rawOptions);
-    return `${start}${renderTable(kind)}\n${end}`;
+    return `${start}${renderTable(parseOptions(rawOptions))}\n${end}`;
   });
   const label = relative(REPO_ROOT, file);
   if (!matched) {

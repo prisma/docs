@@ -10,14 +10,16 @@
 import communityEntries from "./extensions/community.json";
 import officialEntries from "./extensions/official.json";
 
-export const EXTENSION_KINDS = ["extension", "middleware"] as const;
 export const EXTENSION_SOURCES = ["official", "community"] as const;
-export const EXTENSION_DATABASES = ["postgresql", "mongodb"] as const;
 export const EXTENSION_STATUSES = ["stable", "release-candidate", "experimental"] as const;
+/**
+ * Databases Prisma 8 ships or plans today. `databases` on an entry is not
+ * limited to this list: an extension that adds a new database names it here
+ * with its own lowercase slug (for example `cockroachdb`).
+ */
+export const KNOWN_DATABASES = ["postgresql", "mongodb", "sqlite", "mysql"] as const;
 
-export type ExtensionKind = (typeof EXTENSION_KINDS)[number];
 export type ExtensionSource = (typeof EXTENSION_SOURCES)[number];
-export type ExtensionDatabase = (typeof EXTENSION_DATABASES)[number];
 export type ExtensionStatus = (typeof EXTENSION_STATUSES)[number];
 
 export type ExtensionEntry = {
@@ -29,7 +31,6 @@ export type ExtensionEntry = {
   package: string;
   /** Import specifier when it differs from the package name (built-in middleware). */
   importPath?: string;
-  kind: ExtensionKind;
   source: ExtensionSource;
   status: ExtensionStatus;
   /** True when the code ships inside a database package and needs no extra install. */
@@ -38,7 +39,12 @@ export type ExtensionEntry = {
   tldr: string;
   /** One short paragraph, shown on the detail page. Inline code allowed. */
   description: string;
-  databases: ExtensionDatabase[];
+  /**
+   * Lowercase database slugs the extension works with, or, for an extension
+   * that adds a database, the database it adds.
+   */
+  databases: string[];
+  /** Lowercase keywords. `middleware` and `database` drive the docs tables. */
   tags: string[];
   /** Source repository URL. */
   repo: string;
@@ -51,20 +57,25 @@ export type ExtensionEntry = {
   addedAt: string;
 };
 
-export const EXTENSION_KIND_LABELS: Record<ExtensionKind, string> = {
-  extension: "Extension",
-  middleware: "Middleware",
-};
-
 export const EXTENSION_SOURCE_LABELS: Record<ExtensionSource, string> = {
   official: "By Prisma",
   community: "Community",
 };
 
-export const EXTENSION_DATABASE_LABELS: Record<ExtensionDatabase, string> = {
+const DATABASE_LABELS: Record<string, string> = {
   postgresql: "PostgreSQL",
   mongodb: "MongoDB",
+  sqlite: "SQLite",
+  mysql: "MySQL",
+  mariadb: "MariaDB",
+  cockroachdb: "CockroachDB",
+  mssql: "SQL Server",
 };
+
+/** Display name for a database slug; unknown slugs are capitalized. */
+export function getDatabaseLabel(slug: string): string {
+  return DATABASE_LABELS[slug] ?? slug.charAt(0).toUpperCase() + slug.slice(1);
+}
 
 export const EXTENSION_STATUS_LABELS: Record<ExtensionStatus, string> = {
   stable: "Stable",
@@ -73,6 +84,7 @@ export const EXTENSION_STATUS_LABELS: Record<ExtensionStatus, string> = {
 };
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const DATABASE_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const NPM_PACKAGE_PATTERN = /^(?:@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/;
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -113,9 +125,6 @@ export function validateExtensionEntry(input: unknown): string[] {
   if (entry.importPath !== undefined && !isNonEmptyString(entry.importPath, 214)) {
     problems.push("importPath must be a non-empty string when set");
   }
-  if (!isOneOf(EXTENSION_KINDS, entry.kind)) {
-    problems.push(`kind must be one of ${EXTENSION_KINDS.join(", ")}`);
-  }
   if (!isOneOf(EXTENSION_SOURCES, entry.source)) {
     problems.push(`source must be one of ${EXTENSION_SOURCES.join(", ")}`);
   }
@@ -132,16 +141,19 @@ export function validateExtensionEntry(input: unknown): string[] {
   if (
     !Array.isArray(entry.databases) ||
     entry.databases.length === 0 ||
-    !entry.databases.every((database) => isOneOf(EXTENSION_DATABASES, database))
+    entry.databases.length > 6 ||
+    !entry.databases.every(
+      (database) => isNonEmptyString(database, 32) && DATABASE_SLUG_PATTERN.test(database),
+    )
   ) {
-    problems.push(`databases must list at least one of ${EXTENSION_DATABASES.join(", ")}`);
+    problems.push("databases must list 1 to 6 lowercase database slugs, such as postgresql");
   }
   if (
     !Array.isArray(entry.tags) ||
-    entry.tags.length > 6 ||
+    entry.tags.length > 8 ||
     !entry.tags.every((tag) => isNonEmptyString(tag, 32))
   ) {
-    problems.push("tags must be an array of up to 6 short strings");
+    problems.push("tags must be an array of up to 8 short strings");
   }
   if (!isHttpsUrl(entry.repo)) problems.push("repo must be an https URL");
   if (entry.docs !== undefined && !isHttpsUrl(entry.docs)) {
@@ -199,6 +211,24 @@ for (const entry of communityExtensions) {
       `Extension slug "${entry.slug}" exists in both official.json and community.json`,
     );
   }
+}
+
+/** Every database slug any entry mentions, known ones first. */
+export function getListedDatabases(entries: ExtensionEntry[] = extensions): string[] {
+  const seen = new Set(entries.flatMap((entry) => entry.databases));
+  const known = KNOWN_DATABASES.filter((database) => seen.has(database));
+  const rest = [...seen]
+    .filter((database) => !(KNOWN_DATABASES as readonly string[]).includes(database))
+    .sort();
+  return [...known, ...rest];
+}
+
+export function isMiddleware(entry: ExtensionEntry): boolean {
+  return entry.tags.includes("middleware");
+}
+
+export function isDatabase(entry: ExtensionEntry): boolean {
+  return entry.tags.includes("database");
 }
 
 export function getExtensionBySlug(slug: string): ExtensionEntry | undefined {

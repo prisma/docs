@@ -2,14 +2,13 @@ import Link from "next/link";
 import { ArrowRight } from "@/components/icons/forma";
 import { getInstallCommand, type ExtensionEntry } from "@prisma-docs/ui/data/extensions";
 import { CopyCommand, MONO } from "./copy-command";
-import { DatabaseBadges, KindBadge, SourceBadge, StatusBadge } from "./badges";
+import { DatabaseBadges, SourceBadge, StatusBadge } from "./badges";
 
 export function ExtensionCard({ entry }: { entry: ExtensionEntry }) {
   return (
     <article className="group relative flex h-full flex-col gap-4 rounded-2xl border border-black/[0.06] bg-white p-6 shadow-[0_1px_2px_rgba(21,21,21,0.04)] transition-colors hover:border-black/[0.12]">
       <div className="flex flex-wrap items-center gap-1.5">
         <SourceBadge source={entry.source} />
-        <KindBadge kind={entry.kind} />
         <StatusBadge status={entry.status} />
       </div>
       <div className="flex flex-col gap-2">

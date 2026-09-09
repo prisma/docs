@@ -1,4 +1,4 @@
-import type { ExtensionEntry } from "@prisma-docs/ui/data/extensions";
+import { isDatabase, isMiddleware, type ExtensionEntry } from "@prisma-docs/ui/data/extensions";
 
 export type UsageSnippet = { title: string; file: string; code: string };
 
@@ -20,6 +20,64 @@ export const db = postgres<Contract>({
 ];
 
 const HAND_WRITTEN: Record<string, UsageSnippet[]> = {
+  postgresql: [
+    {
+      title: "Configure the database",
+      file: "prisma.config.ts",
+      code: `import { defineConfig } from '@prisma/cli-engine';
+import { defineConfig as ormConfig } from '@prisma/orm-postgres/config';
+
+export default defineConfig({
+  orm: ormConfig({
+    contract: './src/prisma/contract.prisma',
+    db: {
+      connection: process.env['DATABASE_URL']!,
+    },
+  }),
+});`,
+    },
+    {
+      title: "Create the client",
+      file: "src/prisma/db.ts",
+      code: `import postgres from '@prisma/orm-postgres/runtime';
+import type { Contract } from './contract.d';
+import contractJson from './contract.json' with { type: 'json' };
+
+export const db = postgres<Contract>({
+  contractJson,
+  url: process.env['DATABASE_URL']!,
+});`,
+    },
+  ],
+  mongodb: [
+    {
+      title: "Configure the database",
+      file: "prisma.config.ts",
+      code: `import { defineConfig } from '@prisma/cli-engine';
+import { defineConfig as ormConfig } from '@prisma/orm-mongo/config';
+
+export default defineConfig({
+  orm: ormConfig({
+    contract: './src/prisma/contract.prisma',
+    db: {
+      connection: process.env['MONGODB_URL']!,
+    },
+  }),
+});`,
+    },
+    {
+      title: "Create the client",
+      file: "src/prisma/db.ts",
+      code: `import mongo from '@prisma/orm-mongo/runtime';
+import type { Contract } from './contract.d';
+import contractJson from './contract.json' with { type: 'json' };
+
+export const db = mongo<Contract>({
+  contractJson,
+  url: process.env['MONGODB_URL']!,
+});`,
+    },
+  ],
   pgvector: [
     {
       title: "Declare a vector column",
@@ -79,13 +137,14 @@ model Place {
 /**
  * Registration snippets shown on an extension's detail page. Official
  * extension packs share one layout (a `/control` and a `/runtime` entrypoint),
- * so those are generated. Community packages document their own layout, so
- * the page links to their README instead.
+ * so those are generated. Middleware and database packages register
+ * differently and use the hand-written snippets. Community packages document
+ * their own layout, so the page links to their README instead.
  */
 export function getUsageSnippets(entry: ExtensionEntry): UsageSnippet[] {
   const handWritten = HAND_WRITTEN[entry.slug] ?? [];
-  if (entry.kind === "middleware") return handWritten;
   if (entry.source !== "official") return handWritten;
+  if (isMiddleware(entry) || isDatabase(entry)) return handWritten;
 
   const identifier = entry.slug.replace(/-([a-z0-9])/g, (_, char: string) => char.toUpperCase());
   return [
