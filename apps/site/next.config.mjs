@@ -122,7 +122,9 @@ const ContentSecurityPolicy = `
     https://td.doubleclick.net
     https://raw.githubusercontent.com
     https://*.meetupstatic.com
-    https://www.prisma.io;
+    https://www.prisma.io
+    https://*.google-analytics.com
+    https://stats.g.doubleclick.net;
 
   connect-src 'self'
     https://ingest.promptwatch.com
@@ -171,7 +173,10 @@ const ContentSecurityPolicy = `
     https://proxy.kapa.ai
     https://hcaptcha.com
     https://*.hcaptcha.com
-    https://ka-p.fontawesome.com;
+    https://ka-p.fontawesome.com
+    https://*.analytics.google.com
+    https://stats.g.doubleclick.net
+    https://*.google-analytics.com;
 
   media-src 'self'
     https://*.prisma.io
@@ -267,6 +272,23 @@ const config = {
   transpilePackages: ["@prisma/eclipse"],
   async redirects() {
     return [
+      // 2026 rebrand: old-site URLs whose content moved in the redesign IA.
+      { source: "/about", destination: "/company", permanent: true },
+      { source: "/careers", destination: "/company/careers", permanent: true },
+      { source: "/case-studies", destination: "/customers", permanent: true },
+      { source: "/showcase", destination: "/customers", permanent: true },
+      { source: "/privacy", destination: "/legal/privacy", permanent: true },
+      { source: "/terms", destination: "/legal/terms", permanent: true },
+      { source: "/sla", destination: "/legal/sla", permanent: true },
+      { source: "/startups", destination: "/programs/startups", permanent: true },
+      { source: "/partners", destination: "/programs/partners", permanent: true },
+      { source: "/oss-friends", destination: "/programs/oss-friends", permanent: true },
+      // Template gallery renamed to /apps.
+      { source: "/templates", destination: "/apps", permanent: true },
+      // ORM feature marketing absorbed by the new /orm product page.
+      { source: "/client", destination: "/orm", permanent: true },
+      { source: "/typedsql", destination: "/orm", permanent: true },
+      { source: "/migrate", destination: "/orm", permanent: true },
       {
         source: "/:path*",
         has: [
@@ -384,7 +406,8 @@ const config = {
       {
         permanent: true,
         source: "/tutorials/postgres-configuring-user-authentication-db06",
-        destination: "https://www.prisma.io/dataguide/postgresql/configuring-user-authentication",
+        destination:
+          "/dataguide/postgresql/authentication-and-authorization/configuring-user-authentication",
       },
       {
         permanent: true,
@@ -415,9 +438,10 @@ const config = {
           "/blog/backend-prisma-typescript-orm-with-postgresql-rest-api-validation-dcba1ps7kip3",
       },
       {
-        permanent: false,
+        permanent: true,
         source: "/blog/prisma-the-complete-orm-inw24qjeawmb",
-        destination: "https://www.prisma.io/docs/orm/overview/introduction/why-prisma",
+        // The unversioned /docs/orm/overview/... path is redirected on to v6.
+        destination: "/docs/orm/v6/overview/introduction/why-prisma",
       },
       {
         permanent: true,
@@ -447,7 +471,7 @@ const config = {
       {
         permanent: true,
         source: "/with-graphql",
-        destination: "/docs/understand-prisma/prisma-in-your-stack/graphql",
+        destination: "/docs/orm/v6/overview/prisma-in-your-stack/graphql",
       },
       {
         permanent: true,
@@ -457,12 +481,12 @@ const config = {
       {
         permanent: true,
         source: "/client/client-javascript",
-        destination: "/docs/reference/tools-and-interfaces/prisma-client/api",
+        destination: "/docs/orm/v7/reference/prisma-client-reference",
       },
       {
         permanent: true,
         source: "/client/client-typescript",
-        destination: "/docs/reference/tools-and-interfaces/prisma-client/api",
+        destination: "/docs/orm/v7/reference/prisma-client-reference",
       },
       {
         permanent: true,
@@ -472,27 +496,27 @@ const config = {
       {
         permanent: true,
         source: "/features/bindings",
-        destination: "/docs/understand-prisma/prisma-in-your-stack/graphql",
+        destination: "/docs/orm/v6/overview/prisma-in-your-stack/graphql",
       },
       {
         permanent: true,
         source: "/features/data-modeling",
-        destination: "/docs/understand-prisma/data-modeling",
+        destination: "/docs/orm/v6/overview/introduction/data-modeling",
       },
       {
         permanent: true,
         source: "/features/databases",
-        destination: "/docs/more/supported-databases",
+        destination: "/docs/orm/v7/core-concepts/supported-databases",
       },
       {
         permanent: true,
         source: "/features/graphql-api",
-        destination: "/docs/understand-prisma/prisma-in-your-stack/graphql",
+        destination: "/docs/orm/v6/overview/prisma-in-your-stack/graphql",
       },
       {
         permanent: true,
         source: "/features/query-engine",
-        destination: "/docs/understand-prisma/prisma-in-your-stack/graphql",
+        destination: "/docs/orm/v6/overview/prisma-in-your-stack/graphql",
       },
       {
         permanent: true,
@@ -502,23 +526,23 @@ const config = {
       {
         permanent: true,
         source: "/blog/mongodb-preview-ow4wahkekaep",
-        destination: "https://github.com/prisma/prisma/issues/1277",
+        destination: "https://github.com/prisma/orm/issues/1277",
       },
       {
         permanent: true,
         source: "/blog/heroku-integration-homihof6eifi",
         destination:
-          "https://www.prisma.io/docs/orm/prisma-client/deployment/traditional/deploy-to-heroku",
+          "https://www.prisma.io/docs/orm/v7/prisma-client/deployment/traditional/deploy-to-heroku",
       },
       {
         permanent: true,
         source: "/blog/prisma-now-supports-postgres-aad74ba479cb",
-        destination: "https://www.prisma.io/docs/orm/overview/databases/postgresql",
+        destination: "/docs/orm/v7/core-concepts/supported-databases/postgresql",
       },
       {
         permanent: true,
         source: "/blog/introducing-prisma-cloud-a-graphql-database-platform-ed591baa8737",
-        destination: "https://www.prisma.io/cloud",
+        destination: "https://app.prisma.io",
       },
       {
         permanent: true,
@@ -543,19 +567,21 @@ const config = {
         destination: "/data-platform/:any*",
         permanent: true,
       },
+      // Point straight at the final 200 destination: /accelerate and /optimize
+      // are themselves redirected to / by vercel.json, and /pulse to /postgres.
       {
         source: "/data-platform/accelerate",
-        destination: "/accelerate",
+        destination: "/",
         permanent: true,
       },
       {
         source: "/data-platform/pulse",
-        destination: "/pulse",
+        destination: "/postgres",
         permanent: true,
       },
       {
         source: "/data-platform/optimize",
-        destination: "/optimize",
+        destination: "/",
         permanent: true,
       },
       {
@@ -565,7 +591,7 @@ const config = {
       },
       {
         source: "/optimise",
-        destination: "/optimize",
+        destination: "/",
         permanent: true,
       },
       {
@@ -585,7 +611,7 @@ const config = {
       },
       {
         source: "/jobs",
-        destination: "/careers",
+        destination: "/company/careers",
         permanent: true,
       },
       {
@@ -610,7 +636,8 @@ const config = {
       },
       {
         source: "/ambassador",
-        destination: "/partners",
+        // /partners is itself redirected to /programs/partners.
+        destination: "/programs/partners",
         permanent: true,
       },
       {
@@ -635,28 +662,26 @@ const config = {
       },
       {
         source: "/blog/prisma-studio-3rtf78dg99fe",
-        destination: "/docs/orm/tools/prisma-studio",
+        // /docs/orm/tools/prisma-studio is redirected on to the Studio docs.
+        destination: "/docs/studio/getting-started",
         permanent: true,
       },
       {
         source: "/blog/fullstack-remix-prisma-mongodb-1-7D0BfTXBmB6r",
-        destination: "/docs/guides/react-router-7",
+        destination: "/docs/guides/frameworks/react-router-7",
         permanent: true,
       },
       {
         source: "/blog/series/fullstack-nextjs-and-graphql-md1tczpfz1",
-        destination: "/docs/guides/nextjs",
+        destination: "/docs/guides/frameworks/nextjs",
         permanent: true,
       },
       {
         source: "/blog/performance-engineering-aeduv0rei0jk",
-        destination: "/blog/optimize-now-generally-available",
+        // /blog/optimize-now-generally-available is redirected to /blog by the
+        // blog zone, so go there directly.
+        destination: "/blog",
         permanent: true,
-      },
-      {
-        source: "/learn",
-        destination: "/docs/guides",
-        permanent: false,
       },
       {
         source: "/:path*", // Match all routes under playground.prisma.io
@@ -677,11 +702,6 @@ const config = {
       {
         permanent: true,
         source: "/blog/build-real-time-durable-workflows-with-pulse-and-inngest",
-        destination: "https://www.prisma.io/docs/postgres",
-      },
-      {
-        permanent: true,
-        source: "/blog/increased-security-static-ip-support-prisma-pulse",
         destination: "https://www.prisma.io/docs/postgres",
       },
       {
@@ -714,16 +734,6 @@ const config = {
         source: "/affiliates",
         destination: "/",
       },
-      {
-        permanent: true,
-        source: "/react-server-components",
-        destination: "/react",
-      },
-      {
-        permanent: false,
-        source: "/partners/affiliates",
-        destination: "/",
-      },
     ];
   },
 
@@ -742,6 +752,20 @@ const config = {
           source: "/docs/:path*.mdx",
           destination: `${DOCS_ORIGIN}/docs/:path*.mdx`,
           missing: [{ type: "host", value: DOCS_ORIGIN_HOST }],
+        },
+        // Blog markdown renditions must be forwarded to the blog zone before
+        // the bare /:path*.mdx rule below captures them and rewrites into the
+        // site app's stub llms.mdx route, which always 404s. The .md variant
+        // matches docs, whose Link headers advertise the .md suffix to agents.
+        {
+          source: "/blog/:path*.mdx",
+          destination: `${BLOG_ORIGIN}/blog/:path*.mdx`,
+          missing: [{ type: "host", value: BLOG_ORIGIN_HOST }],
+        },
+        {
+          source: "/blog/:path*.md",
+          destination: `${BLOG_ORIGIN}/blog/:path*.md`,
+          missing: [{ type: "host", value: BLOG_ORIGIN_HOST }],
         },
         {
           source: "/:path*.mdx",

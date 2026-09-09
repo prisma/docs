@@ -2,7 +2,7 @@
 import type { ComponentProps } from "react";
 import { Search } from "lucide-react";
 import { useSearchContext } from "@fumadocs/base-ui/contexts/search";
-import { useI18n } from "@fumadocs/base-ui/contexts/i18n";
+import { useTranslations } from "@fuma-translate/react";
 import { cn } from "@prisma-docs/ui/lib/cn";
 import { type ButtonProps, buttonVariants } from "../ui/button";
 
@@ -47,7 +47,7 @@ export function LargeSearchToggle({
   hideIfDisabled?: boolean;
 }) {
   const { enabled, hotKey, setOpenSearch } = useSearchContext();
-  const { text } = useI18n();
+  const t = useTranslations({ note: "search trigger" });
   if (hideIfDisabled && !enabled) return null;
 
   return (
@@ -56,7 +56,9 @@ export function LargeSearchToggle({
       data-search-full=""
       {...props}
       className={cn(
-        "inline-flex items-center gap-2 rounded-lg border bg-fd-secondary/50 p-1.5 ps-2 text-sm text-fd-muted-foreground transition-colors hover:bg-fd-accent hover:text-fd-accent-foreground",
+        // The navbar's pill: hairline ring on a paper wash, kbd chips squared
+        // off inside it so the shapes read as nested rather than repeated.
+        "inline-flex items-center gap-2 rounded-full border border-stroke-neutral bg-fd-secondary/50 p-1.5 ps-3 text-sm text-fd-muted-foreground transition-colors duration-300 hover:bg-fd-accent hover:text-fd-accent-foreground motion-reduce:transition-none",
         props.className,
       )}
       onClick={() => {
@@ -64,10 +66,10 @@ export function LargeSearchToggle({
       }}
     >
       <Search className="size-4" />
-      {text.search}
+      {t("Search")}
       <div className="ms-auto inline-flex gap-0.5">
         {hotKey.map((k, i) => (
-          <kbd key={i} className="rounded-md border bg-fd-background px-1.5">
+          <kbd key={i} className="rounded-md border border-stroke-neutral bg-fd-background px-1.5">
             {k.display}
           </kbd>
         ))}

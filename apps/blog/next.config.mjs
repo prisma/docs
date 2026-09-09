@@ -77,7 +77,9 @@ const ContentSecurityPolicy = `
     https://googleads.g.doubleclick.net
     https://vercel.live https://vercel.com data: blob:
     https://td.doubleclick.net
-    https://raw.githubusercontent.com;
+    https://raw.githubusercontent.com
+    https://*.google-analytics.com
+    https://stats.g.doubleclick.net;
 
   connect-src 'self'
     https://ingest.promptwatch.com
@@ -126,7 +128,10 @@ const ContentSecurityPolicy = `
     https://proxy.kapa.ai
     https://hcaptcha.com
     https://*.hcaptcha.com
-    https://ka-p.fontawesome.com;
+    https://ka-p.fontawesome.com
+    https://*.analytics.google.com
+    https://stats.g.doubleclick.net
+    https://*.google-analytics.com;
 
   media-src 'self'
     https://*.prisma.io
@@ -201,9 +206,7 @@ const securityHeaders = [
   },
 ];
 
-const allowedDevOrigins = (
-  process.env.ALLOWED_DEV_ORIGINS ?? "localhost,127.0.0.1,192.168.1.48"
-)
+const allowedDevOrigins = (process.env.ALLOWED_DEV_ORIGINS ?? "localhost,127.0.0.1,192.168.1.48")
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
@@ -229,6 +232,20 @@ const config = {
         permanent: false,
         basePath: false,
       },
+      // Direct hits on the blog origin host (blog.prisma.io/robots.txt) get a
+      // disallow-all robots.txt so the duplicate host is not crawled. Search
+      // Console shows blog.prisma.io URLs indexed with impressions but zero
+      // clicks. Google follows robots.txt redirects and treats the target as
+      // this host's robots file. A basePath-free rewrite is not allowed for
+      // internal destinations, hence the redirect. The canonical
+      // www.prisma.io/robots.txt is served by apps/site and never reaches
+      // this app.
+      {
+        source: "/robots.txt",
+        destination: "/blog/robots-origin.txt",
+        permanent: false,
+        basePath: false,
+      },
       {
         source: "/optimize-now-generally-available",
         destination: "/",
@@ -240,8 +257,24 @@ const config = {
         permanent: true,
       },
       {
+        source: "/series/prisma-next",
+        destination: "/series/prisma-8",
+        permanent: true,
+      },
+      // Mis-cased legacy slugs (e.g. the all-lowercase copy of
+      // /nestjs-prisma-authentication-7D056s1s0k3l) are NOT handled here.
+      // Next.js matches redirect `source` case-insensitively, so a rule whose
+      // source and destination differ only in case matches its own destination
+      // and 308-redirects forever. The case-insensitive fallback lives in
+      // src/app/(blog)/[slug]/page.tsx instead.
+      {
         source: "/xeito-prisma-customer-story",
         destination: "/how-xeito-builds-features-not-database-infrastructure-with-prisma",
+        permanent: true,
+      },
+      {
+        source: "/series/agentic-software-development",
+        destination: "/series/agentic-engineering",
         permanent: true,
       },
       ...tagSlugs.map((tag) => ({
@@ -259,6 +292,13 @@ const config = {
       },
       {
         source: "/:path*.mdx",
+        destination: "/llms.mdx/:path*",
+      },
+      // Match docs: agents request the conventional .md suffix too, and the
+      // docs Link headers advertise it. Both suffixes serve the same
+      // markdown rendition.
+      {
+        source: "/:path*.md",
         destination: "/llms.mdx/:path*",
       },
     ];
