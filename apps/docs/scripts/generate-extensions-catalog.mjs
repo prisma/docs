@@ -61,8 +61,10 @@ const community = readRegistry("community.json");
 const byName = (a, b) => a.name.localeCompare(b.name);
 const entries = [...official.sort(byName), ...community.sort(byName)];
 
+// Backslashes first, otherwise a `\|` in the input becomes `\\|` and GFM
+// reads the pipe as a column boundary.
 function escapeCell(text) {
-  return text.replace(/\|/g, "\\|");
+  return text.replace(/\\/g, "\\\\").replace(/\|/g, "\\|");
 }
 
 function renderTable(options) {

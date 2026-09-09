@@ -17,10 +17,12 @@ import {
   validateExtensionEntry,
 } from "@prisma-docs/ui/data/extensions";
 import {
+  assertPublishedOnNpm,
   COMMUNITY_REGISTRY_PATH,
   formatRegistry,
   isTrustedOrigin,
   slugFromPackage,
+  SubmissionError,
   submissionSchema,
   toRegistryEntry,
 } from "@/lib/extensions/submission";
@@ -62,8 +64,13 @@ test("validateExtensionEntry rejects malformed entries", () => {
   assert.match(problem({ databases: [] }), /^databases/);
   assert.match(problem({ databases: ["postgresql", "postgresql"] }), /repeat/);
   assert.match(problem({ tags: ["json", "json"] }), /repeat/);
+  assert.match(problem({ tags: ["Middleware"] }), /lowercase/);
+  assert.match(problem({ builtIn: true }), /^importPath is required/);
+  assert.deepEqual(problem({ builtIn: true, importPath: "@scope/pkg/runtime" }), "");
   assert.match(problem({ author: { name: "x", url: "ftp://x" } }), /^author/);
   assert.match(problem({ addedAt: "09/09/2026" }), /^addedAt/);
+  assert.match(problem({ addedAt: "2026-02-30" }), /^addedAt/);
+  assert.match(problem({ addedAt: "2026-13-01" }), /^addedAt/);
   assert.deepEqual(validateExtensionEntry(null), ["entry must be an object"]);
 });
 
@@ -83,7 +90,7 @@ test("toRegistryEntry builds a community entry and drops repeated databases and 
   const parsed = submissionSchema.parse({
     ...validInput,
     databases: ["postgresql", "PostgreSQL ", "cockroachdb"],
-    tags: ["thing", "thing", "other"],
+    tags: ["thing", "Thing ", "other"],
     docs: "   ",
   });
   const entry = toRegistryEntry(parsed, "2026-09-09");
@@ -101,6 +108,33 @@ test("submissionSchema rejects what the registry would reject", () => {
   assert.equal(submissionSchema.safeParse({ ...validInput, databases: [] }).success, false);
   assert.equal(submissionSchema.safeParse({ ...validInput, repo: "http://x.dev" }).success, false);
   assert.equal(submissionSchema.safeParse({ ...validInput, tldr: "short" }).success, false);
+});
+
+test("assertPublishedOnNpm maps upstream failures to SubmissionError statuses", async () => {
+  const realFetch = globalThis.fetch;
+  const stub = (impl: () => Promise<Response>) => {
+    globalThis.fetch = impl as typeof fetch;
+  };
+  const rejectsWithStatus = (status: number) => (error: unknown) =>
+    error instanceof SubmissionError && error.status === status;
+  try {
+    stub(async () => {
+      throw new DOMException("timed out", "TimeoutError");
+    });
+    await assert.rejects(assertPublishedOnNpm("some-package"), rejectsWithStatus(504));
+    stub(async () => {
+      throw new TypeError("fetch failed");
+    });
+    await assert.rejects(assertPublishedOnNpm("some-package"), rejectsWithStatus(502));
+    stub(async () => new Response("{}", { status: 404 }));
+    await assert.rejects(assertPublishedOnNpm("some-package"), rejectsWithStatus(400));
+    stub(async () => new Response("{}", { status: 503 }));
+    await assert.rejects(assertPublishedOnNpm("some-package"), rejectsWithStatus(502));
+    stub(async () => new Response("{}", { status: 200 }));
+    await assertPublishedOnNpm("some-package");
+  } finally {
+    globalThis.fetch = realFetch;
+  }
 });
 
 test("slugFromPackage strips scopes and the conventional prefixes", () => {

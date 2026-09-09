@@ -51,7 +51,8 @@ export const submissionSchema = z.object({
     .max(6),
   tldr: z.string().trim().min(10).max(140),
   description: z.string().trim().min(40).max(600),
-  tags: z.array(z.string().trim().min(1).max(32)).max(6),
+  // Lowercase because `middleware` and `database` tags drive the docs tables.
+  tags: z.array(z.string().trim().toLowerCase().min(1).max(32)).max(6),
   repo: httpsUrl,
   docs: optionalHttpsUrl,
   example: optionalHttpsUrl,
@@ -118,11 +119,32 @@ export function assertNotListed(entry: ExtensionEntry, current: ExtensionEntry[]
   }
 }
 
+const UPSTREAM_TIMEOUT_MS = 10_000;
+
+/**
+ * `fetch` with a deadline, so a stalled npm or GitHub request fails the
+ * submission with a clear status instead of holding the route open until the
+ * platform kills it. A timeout is 504; any other transport failure is 502.
+ */
+async function fetchUpstream(what: string, url: string, init: RequestInit): Promise<Response> {
+  try {
+    return await fetch(url, { ...init, signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS) });
+  } catch (error) {
+    const timedOut = error instanceof Error && error.name === "TimeoutError";
+    throw new SubmissionError(
+      timedOut ? 504 : 502,
+      `Could not reach ${what}${timedOut ? " in time" : ""}. Try again in a minute.`,
+    );
+  }
+}
+
 /** Confirm the package is published before we open a pull request for it. */
 export async function assertPublishedOnNpm(packageName: string) {
-  const response = await fetch(`https://registry.npmjs.org/${encodeURIComponent(packageName)}`, {
-    headers: { accept: "application/json" },
-  });
+  const response = await fetchUpstream(
+    "the npm registry",
+    `https://registry.npmjs.org/${encodeURIComponent(packageName)}`,
+    { headers: { accept: "application/json" } },
+  );
   if (response.status === 404) {
     throw new SubmissionError(400, `${packageName} is not published on npm.`);
   }
@@ -205,7 +227,7 @@ async function github<T>(
   path: string,
   init: { method?: string; body?: unknown } = {},
 ): Promise<T> {
-  const response = await fetch(`https://api.github.com${path}`, {
+  const response = await fetchUpstream("GitHub", `https://api.github.com${path}`, {
     method: init.method ?? "GET",
     headers: {
       accept: "application/vnd.github+json",

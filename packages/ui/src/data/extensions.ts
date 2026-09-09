@@ -88,6 +88,13 @@ const DATABASE_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const NPM_PACKAGE_PATTERN = /^(?:@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/;
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
+/** YYYY-MM-DD and a date that exists on the calendar (2026-02-30 does not). */
+function isCalendarDate(value: string): boolean {
+  if (!ISO_DATE_PATTERN.test(value)) return false;
+  const date = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
 function isHttpsUrl(value: unknown): value is string {
   if (typeof value !== "string") return false;
   try {
@@ -134,6 +141,11 @@ export function validateExtensionEntry(input: unknown): string[] {
   if (entry.builtIn !== undefined && typeof entry.builtIn !== "boolean") {
     problems.push("builtIn must be a boolean when set");
   }
+  // The detail page and the docs table print the import specifier for
+  // built-in entries, so it cannot be left implicit.
+  if (entry.builtIn === true && entry.importPath === undefined) {
+    problems.push("importPath is required when builtIn is true");
+  }
   if (!isNonEmptyString(entry.tldr, 140)) problems.push("tldr is required (max 140 characters)");
   if (!isNonEmptyString(entry.description, 600)) {
     problems.push("description is required (max 600 characters)");
@@ -153,9 +165,9 @@ export function validateExtensionEntry(input: unknown): string[] {
   if (
     !Array.isArray(entry.tags) ||
     entry.tags.length > 8 ||
-    !entry.tags.every((tag) => isNonEmptyString(tag, 32))
+    !entry.tags.every((tag) => isNonEmptyString(tag, 32) && tag === tag.toLowerCase())
   ) {
-    problems.push("tags must be an array of up to 8 short strings");
+    problems.push("tags must be an array of up to 8 short lowercase strings");
   } else if (new Set(entry.tags).size !== entry.tags.length) {
     problems.push("tags must not repeat");
   }
@@ -175,8 +187,8 @@ export function validateExtensionEntry(input: unknown): string[] {
   ) {
     problems.push("author must have a name and an https url");
   }
-  if (!isNonEmptyString(entry.addedAt, 10) || !ISO_DATE_PATTERN.test(entry.addedAt)) {
-    problems.push("addedAt must be an ISO date (YYYY-MM-DD)");
+  if (!isNonEmptyString(entry.addedAt, 10) || !isCalendarDate(entry.addedAt)) {
+    problems.push("addedAt must be a real ISO date (YYYY-MM-DD)");
   }
   return problems;
 }
