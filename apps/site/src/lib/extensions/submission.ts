@@ -124,12 +124,26 @@ const UPSTREAM_TIMEOUT_MS = 10_000;
 /**
  * `fetch` with a deadline, so a stalled npm or GitHub request fails the
  * submission with a clear status instead of holding the route open until the
- * platform kills it. A timeout is 504; any other transport failure is 502.
+ * platform kills it. `read` runs inside the same guard because the deadline
+ * also covers the body: once the signal fires, `response.json()` rejects with
+ * the same `TimeoutError` the request itself would. A timeout is 504; any
+ * other transport failure is 502. A `SubmissionError` thrown by `read` passes
+ * through unchanged.
  */
-async function fetchUpstream(what: string, url: string, init: RequestInit): Promise<Response> {
+async function fetchUpstream<T>(
+  what: string,
+  url: string,
+  init: RequestInit,
+  read: (response: Response) => Promise<T>,
+): Promise<T> {
   try {
-    return await fetch(url, { ...init, signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS) });
+    const response = await fetch(url, {
+      ...init,
+      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
+    });
+    return await read(response);
   } catch (error) {
+    if (error instanceof SubmissionError) throw error;
     const timedOut = error instanceof Error && error.name === "TimeoutError";
     throw new SubmissionError(
       timedOut ? 504 : 502,
@@ -140,17 +154,19 @@ async function fetchUpstream(what: string, url: string, init: RequestInit): Prom
 
 /** Confirm the package is published before we open a pull request for it. */
 export async function assertPublishedOnNpm(packageName: string) {
-  const response = await fetchUpstream(
+  await fetchUpstream(
     "the npm registry",
     `https://registry.npmjs.org/${encodeURIComponent(packageName)}`,
     { headers: { accept: "application/json" } },
+    async (response) => {
+      if (response.status === 404) {
+        throw new SubmissionError(400, `${packageName} is not published on npm.`);
+      }
+      if (!response.ok) {
+        throw new SubmissionError(502, "Could not reach the npm registry. Try again in a minute.");
+      }
+    },
   );
-  if (response.status === 404) {
-    throw new SubmissionError(400, `${packageName} is not published on npm.`);
-  }
-  if (!response.ok) {
-    throw new SubmissionError(502, "Could not reach the npm registry. Try again in a minute.");
-  }
 }
 
 const SCALAR = String.raw`(?:"[^"\n]*"|-?\d+(?:\.\d+)?|true|false|null)`;
@@ -227,24 +243,31 @@ async function github<T>(
   path: string,
   init: { method?: string; body?: unknown } = {},
 ): Promise<T> {
-  const response = await fetchUpstream("GitHub", `https://api.github.com${path}`, {
-    method: init.method ?? "GET",
-    headers: {
-      accept: "application/vnd.github+json",
-      authorization: `Bearer ${config.token}`,
-      "x-github-api-version": "2022-11-28",
-      ...(init.body !== undefined ? { "content-type": "application/json" } : {}),
+  const method = init.method ?? "GET";
+  return fetchUpstream(
+    "GitHub",
+    `https://api.github.com${path}`,
+    {
+      method,
+      headers: {
+        accept: "application/vnd.github+json",
+        authorization: `Bearer ${config.token}`,
+        "x-github-api-version": "2022-11-28",
+        ...(init.body !== undefined ? { "content-type": "application/json" } : {}),
+      },
+      body: init.body !== undefined ? JSON.stringify(init.body) : undefined,
     },
-    body: init.body !== undefined ? JSON.stringify(init.body) : undefined,
-  });
-  if (!response.ok) {
-    const detail = await response.text().catch(() => "");
-    throw new SubmissionError(
-      502,
-      `GitHub returned ${response.status} for ${init.method ?? "GET"} ${path}: ${detail.slice(0, 200)}`,
-    );
-  }
-  return (await response.json()) as T;
+    async (response) => {
+      if (!response.ok) {
+        const detail = await response.text().catch(() => "");
+        throw new SubmissionError(
+          502,
+          `GitHub returned ${response.status} for ${method} ${path}: ${detail.slice(0, 200)}`,
+        );
+      }
+      return (await response.json()) as T;
+    },
+  );
 }
 
 /** Read the community registry as it is on the base branch right now. */

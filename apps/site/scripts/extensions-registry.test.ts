@@ -19,6 +19,7 @@ import {
 import {
   assertPublishedOnNpm,
   COMMUNITY_REGISTRY_PATH,
+  fetchCurrentRegistry,
   formatRegistry,
   isTrustedOrigin,
   slugFromPackage,
@@ -132,6 +133,39 @@ test("assertPublishedOnNpm maps upstream failures to SubmissionError statuses", 
     await assert.rejects(assertPublishedOnNpm("some-package"), rejectsWithStatus(502));
     stub(async () => new Response("{}", { status: 200 }));
     await assertPublishedOnNpm("some-package");
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+test("GitHub calls map a body that stalls past the deadline to 504, not 500", async () => {
+  const realFetch = globalThis.fetch;
+  const config = { token: "t", repo: "prisma/web", baseBranch: "main" };
+  const rejectsWithStatus = (status: number) => (error: unknown) =>
+    error instanceof SubmissionError && error.status === status;
+  try {
+    // Headers arrived in time; the JSON body did not. undici rejects the body
+    // read with the same TimeoutError as the request would have.
+    globalThis.fetch = (async () => {
+      const response = new Response("{}", { status: 200 });
+      response.json = () => Promise.reject(new DOMException("timed out", "TimeoutError"));
+      return response;
+    }) as typeof fetch;
+    await assert.rejects(fetchCurrentRegistry(config), rejectsWithStatus(504));
+
+    globalThis.fetch = (async () => new Response("nope", { status: 401 })) as typeof fetch;
+    await assert.rejects(
+      fetchCurrentRegistry(config),
+      (error: unknown) =>
+        rejectsWithStatus(502)(error) && /GitHub returned 401/.test((error as Error).message),
+    );
+
+    const content = Buffer.from(formatRegistry(communityExtensions), "utf8").toString("base64");
+    globalThis.fetch = (async () =>
+      new Response(JSON.stringify({ content, sha: "abc" }), { status: 200 })) as typeof fetch;
+    const current = await fetchCurrentRegistry(config);
+    assert.equal(current.sha, "abc");
+    assert.deepEqual(current.entries, communityExtensions);
   } finally {
     globalThis.fetch = realFetch;
   }
