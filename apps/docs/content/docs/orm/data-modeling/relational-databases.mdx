@@ -114,13 +114,13 @@ A single foreign key cannot express this, because each side needs to point at ma
 model Post {
   id    Int       @id @default(autoincrement())
   title String
-  tags  PostTag[]
+  tags  Tag[]
 }
 
 model Tag {
   id    Int       @id @default(autoincrement())
   label String    @unique
-  posts PostTag[]
+  posts Post[]
 }
 
 model PostTag {
@@ -133,11 +133,15 @@ model PostTag {
 }
 ```
 
-The junction model is two one-to-many relations back to back. Its composite primary key, `@@id([postId, tagId])`, enforces one record per pair.
+The junction model is two one-to-many relations back to back. Its composite primary key, `@@id([postId, tagId])`, enforces one record per pair. The list fields on `Post` and `Tag` name the far side (`Tag[]`, `Post[]`), and the schema compiler routes them through the junction, so queries read `post.tags` directly.
 
-Connecting a post to a tag is a plain create on the junction model, and disconnecting is a delete:
+Connect a post to a tag with a nested write on the list field, or create the junction record yourself; both produce the same row:
 
 ```typescript
+await db.orm.public.Post.where({ id: post.id }).update({
+  tags: (t) => t.connect([{ id: tag.id }]),
+});
+
 await db.orm.public.PostTag.create({ postId: post.id, tagId: tag.id });
 ```
 

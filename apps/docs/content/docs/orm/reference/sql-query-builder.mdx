@@ -581,7 +581,7 @@ model Order {
 </details>
 
 :::note[Aggregates decode as numbers, with lossless variants beside them]
-`count()`, `sum()` over an integer column, and `avg()` over an integer column all return a JavaScript `number`. Outside the safe-integer range, ±(2^53 − 1), the decode raises `RUNTIME.DECODE_FAILED` rather than answering with a rounded value, so reach for the lossless form when the magnitude is real: `countBigInt()` returns a `bigint`, `sumBigInt(field)` returns a `bigint`, and `avgDecimal(field)` returns an exact decimal string. `min()` and `max()` return the input column's own type.
+`count()`, `sum()` over an integer column, and `avg()` over an integer column all return a JavaScript `number`. For `count()` and integer `sum()`, a value outside the safe-integer range, ±(2^53 − 1), raises `RUNTIME.DECODE_FAILED` rather than answering with a rounded value (`avg()` is computed as `float8` and has no such guard), so reach for the lossless form when the magnitude is real: `countBigInt()` returns a `bigint`, `sumBigInt(field)` returns a `bigint`, and `avgDecimal(field)` returns an exact decimal string. `min()` and `max()` return the input column's own type.
 :::
 
 ### `groupBy()`
@@ -625,7 +625,8 @@ const plan = db.sql.public.order
   .groupBy((f, fns) => fns.raw`EXTRACT(YEAR FROM ${f.placedAt})`.returns('pg/int4@1'))
   .build();
 const rows = await runtime.query(plan);
-// rows === [{ yearPlaced: 2024, orderCount: 10 }]
+// rows === [{ yearPlaced: '2024', orderCount: 10 }]
+// yearPlaced is a string: a raw expression is not decoded through a codec, and EXTRACT returns numeric.
 ```
 
 ### `having()`
