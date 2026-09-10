@@ -78,7 +78,7 @@ model Profile {
 }
 ```
 
-Declare the relation on the side that holds the foreign key (`Profile` here). The mirror field on the other model (`profile Profile?` on `User`) is not supported yet, so [query the relation from the profile side](/orm/fundamentals/relations-and-joins#one-to-one).
+Declare the relation on the side that holds the foreign key (`Profile` here). You can add the mirror field on the other model as well (`profile Profile?` on `User`); a bare optional model-typed field is enough, and it needs no `@relation` of its own. The foreign key it mirrors must be unique, or emit rejects the field with `PSL_NON_UNIQUE_BACKRELATION`. With the mirror field in place, [the relation reads from either side](/orm/fundamentals/relations-and-joins#one-to-one).
 
 ### Which side owns the foreign key
 
@@ -189,7 +189,13 @@ model Feature {
 
 `@@discriminator(type)` marks the field that records the variant. `@@base(Task, "bug")` declares that `Bug` is the `"bug"` variant of `Task`.
 
-Variants appear as their own models in queries (`db.orm.public.Bug` alongside `db.orm.public.Task`), and a query on the base model returns every variant. When writing, pass the discriminator value explicitly when you create through a variant (`{ title, severity, type: "bug" }`); it is not filled in automatically yet.
+Variants appear as their own models in queries (`db.orm.public.Bug` alongside `db.orm.public.Task`), and a query on the base model returns every variant. To write a variant, narrow the base collection with `.variant(...)` and create through it; the discriminator is injected for you:
+
+```typescript
+await db.orm.public.Task.variant("Bug").create({ title: "Crash on save", severity: "high" });
+```
+
+Chaining `.variant(...)` on a read narrows the same way, applying the discriminator filter and giving the collection the variant's row shape.
 
 Each variant picks one of two storage layouts:
 
@@ -211,4 +217,4 @@ Projects scaffolded with `create-prisma@latest` install [Prisma 8 skills](/ai/to
 
 - [Query relations](/orm/fundamentals/relations-and-joins) with `.include(...)`, relation predicates, and junction traversal.
 - To model for MongoDB, see the [MongoDB data modeling guide](/orm/data-modeling/mongodb).
-- Referential actions (what happens to related rows on delete) are covered in the relations reference as it lands.
+- Referential actions work today: add `onDelete` and `onUpdate` to `@relation` with `Cascade`, `Restrict`, `SetNull`, or `NoAction`, as in `@relation(fields: [userId], references: [id], onDelete: Cascade)`, and the emitter lowers them to the foreign key's `ON DELETE` / `ON UPDATE` clause.
