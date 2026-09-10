@@ -329,7 +329,7 @@ Eagerly load a relation onto the returned rows.
 #### Remarks
 
 - Available for PostgreSQL and MongoDB, with different capabilities.
-- On PostgreSQL, `include(relationName, refineFn?)` loads to-one and to-many relations, and the optional refinement callback receives a nested `Collection` you can filter, order, take, and reduce (see [Refinements, reducers, and combine](#refinements-reducers-and-combine)).
+- On PostgreSQL, `include(relationName, refineFn?)` loads to-one and to-many relations, and the optional refinement callback receives a nested `Collection` you can filter, order, limit, and reduce (see [Refinements, reducers, and combine](#refinements-reducers-and-combine)).
 - On MongoDB, `include(relationName)` adds a `$lookup` for a reference relation and takes only a relation name; there is no refinement-callback overload.
 - On MongoDB, a looked-up sub-document's `_id` comes back as a raw driver `ObjectId`, not decoded to a hex string the way top-level `_id` fields are. Compare it with `String(...)`.
 - On MongoDB, passing a second argument to `include()` does **not** throw. JavaScript does not arity-check, so the extra argument is silently ignored and a plain, unrefined `$lookup` runs. This differs from calling a genuinely absent method, which throws `TypeError`.
@@ -387,7 +387,7 @@ On PostgreSQL, `include()`'s refinement callback receives the nested relation as
 
 | Name | Type | Required | Description |
 |---|---|---|---|
-| `filter` / `orderBy` / `take` / `skip` | Chained on the nested collection | No | Refine which related rows load. |
+| `filter` / `orderBy` / `limit` / `offset` | Chained on the nested collection | No | Refine which related rows load. |
 | `count()` | Reducer, no arguments | No | Reduces the relation to a row count. |
 | `sum(field)` / `avg(field)` | Reducer over a numeric field | No | Reduces the relation to a numeric aggregate; `null` over an empty relation. |
 | `min(field)` / `max(field)` | Reducer over a numeric field | No | Reduces the relation to a minimum/maximum. |
@@ -401,14 +401,14 @@ On PostgreSQL, `include()`'s refinement callback receives the nested relation as
 
 #### Examples
 
-##### Filter, order, and take within a relation (PostgreSQL)
+##### Filter, order, and limit within a relation (PostgreSQL)
 
 ```typescript
 const users = await db.orm.public.User.include('posts', (posts) =>
   posts
     .where((p) => p.priority.eq('low'))
     .orderBy((p) => p.createdAt.desc())
-    .take(1),
+    .limit(1),
 )
   .where({ id: aliceId })
   .all();
@@ -453,7 +453,7 @@ const rows = await db.orm.public.Customer.include('orders', (orders) => orders.s
 ```typescript
 const users = await db.orm.public.User.include('posts', (posts) =>
   posts.combine({
-    recent: posts.orderBy((p) => p.createdAt.desc()).take(1),
+    recent: posts.orderBy((p) => p.createdAt.desc()).limit(1),
     total: posts.count(),
   }),
 )
@@ -513,7 +513,7 @@ const byPriorityThenDate = await db.orm.public.Post.orderBy([
 // priority sorts in enum declaration order (low, high, urgent), not alphabetically
 ```
 
-### `take()`
+### `limit()`
 
 Limit the number of returned rows.
 
@@ -531,28 +531,28 @@ Limit the number of returned rows.
 
 | Return type | Example | Description |
 |---|---|---|
-| `Collection` | `db.orm.public.Post.take(2)` | A collection limited to `count` rows. |
+| `Collection` | `db.orm.public.Post.limit(2)` | A collection limited to `count` rows. |
 
 #### Examples
 
 ##### Limit the result set
 
 ```typescript tab="PostgreSQL"
-const firstTwo = await db.orm.public.Post.orderBy((p) => p.createdAt.asc()).take(2).all();
+const firstTwo = await db.orm.public.Post.orderBy((p) => p.createdAt.asc()).limit(2).all();
 ```
 
 ```typescript tab="MongoDB"
-const firstOne = await db.orm.posts.orderBy({ createdAt: 1 }).take(1).all();
+const firstOne = await db.orm.posts.orderBy({ createdAt: 1 }).limit(1).all();
 ```
 
-### `skip()`
+### `offset()`
 
 Offset into the ordered result set.
 
 #### Remarks
 
 - Available for PostgreSQL and MongoDB.
-- Combine with `orderBy()` and `take()` for pagination.
+- Combine with `orderBy()` and `limit()` for pagination.
 
 #### Options
 
@@ -564,18 +564,18 @@ Offset into the ordered result set.
 
 | Return type | Example | Description |
 |---|---|---|
-| `Collection` | `db.orm.public.Post.skip(2)` | A collection offset by `count` rows. |
+| `Collection` | `db.orm.public.Post.offset(2)` | A collection offset by `count` rows. |
 
 #### Examples
 
 ##### Offset into the result set
 
 ```typescript tab="PostgreSQL"
-const page2 = await db.orm.public.Post.orderBy((p) => p.createdAt.asc()).skip(2).take(2).all();
+const page2 = await db.orm.public.Post.orderBy((p) => p.createdAt.asc()).offset(2).limit(2).all();
 ```
 
 ```typescript tab="MongoDB"
-const secondPost = await db.orm.posts.orderBy({ createdAt: 1 }).skip(1).take(1).all();
+const secondPost = await db.orm.posts.orderBy({ createdAt: 1 }).offset(1).limit(1).all();
 ```
 
 ### `cursor()`
@@ -604,12 +604,12 @@ Resume pagination from a known position.
 ##### Resume pagination (PostgreSQL)
 
 ```typescript
-const page1 = await db.orm.public.Post.orderBy((p) => p.createdAt.asc()).take(2).all();
+const page1 = await db.orm.public.Post.orderBy((p) => p.createdAt.asc()).limit(2).all();
 const last = page1[page1.length - 1];
 
 const page2 = await db.orm.public.Post.orderBy((p) => p.createdAt.asc())
   .cursor({ createdAt: last.createdAt })
-  .take(2)
+  .limit(2)
   .all();
 ```
 
